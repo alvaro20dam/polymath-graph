@@ -1,0 +1,1611 @@
+{
+ "domains": {
+  "philosophy": {
+   "label": "Filosofía",
+   "color": "#c084fc"
+  },
+  "science": {
+   "label": "Ciencia",
+   "color": "#34d399"
+  },
+  "technology": {
+   "label": "Tecnología",
+   "color": "#38bdf8"
+  },
+  "history": {
+   "label": "Historia",
+   "color": "#fbbf24"
+  },
+  "logic": {
+   "label": "Lógica y Matemática",
+   "color": "#f87171"
+  },
+  "art": {
+   "label": "Arte",
+   "color": "#f472b6"
+  }
+ },
+ "relations": {
+  "foundation": "es fundamento de",
+  "influences": "influye en",
+  "extends": "extiende a",
+  "applies": "se aplica en",
+  "contrasts": "contrasta con",
+  "enables": "hace posible"
+ },
+ "nodes": [
+  {
+   "id": "socratic_method",
+   "label": "Método socrático",
+   "domain": "philosophy",
+   "complexity": 1,
+   "year": -399,
+   "authors": [
+    "Sócrates",
+    "Platón"
+   ],
+   "summary": "Indagación mediante preguntas que expone contradicciones y hace que el interlocutor construya su propio conocimiento."
+  },
+  {
+   "id": "platonic_forms",
+   "label": "Teoría de las Formas",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": -380,
+   "authors": [
+    "Platón"
+   ],
+   "summary": "Las ideas perfectas e inmutables existen más allá del mundo sensible; lo que vemos son copias imperfectas."
+  },
+  {
+   "id": "stoicism",
+   "label": "Estoicismo",
+   "domain": "philosophy",
+   "complexity": 1,
+   "year": -300,
+   "authors": [
+    "Zenón de Citio",
+    "Epicteto",
+    "Marco Aurelio"
+   ],
+   "summary": "Escuela que distingue lo que depende de nosotros de lo que no; base ética y lógica (Crisipo) con huella en la terapia cognitiva."
+  },
+  {
+   "id": "empiricism",
+   "label": "Empirismo",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": 1690,
+   "authors": [
+    "John Locke",
+    "David Hume"
+   ],
+   "summary": "Todo conocimiento procede de la experiencia sensible; Hume cuestiona la inducción y la causalidad."
+  },
+  {
+   "id": "rationalism",
+   "label": "Racionalismo",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": 1641,
+   "authors": [
+    "Descartes",
+    "Spinoza",
+    "Leibniz"
+   ],
+   "summary": "La razón es fuente primaria del conocimiento; Leibniz sueña con un cálculo universal del razonamiento."
+  },
+  {
+   "id": "kant_critique",
+   "label": "Crítica de la razón pura",
+   "domain": "philosophy",
+   "complexity": 4,
+   "year": 1781,
+   "authors": [
+    "Immanuel Kant"
+   ],
+   "summary": "Sintetiza empirismo y racionalismo: conocemos fenómenos estructurados por categorías de la mente, no cosas en sí."
+  },
+  {
+   "id": "utilitarianism",
+   "label": "Utilitarismo",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": 1789,
+   "authors": [
+    "Jeremy Bentham",
+    "John Stuart Mill"
+   ],
+   "summary": "Una acción es correcta si maximiza el bienestar agregado; ética de consecuencias medibles."
+  },
+  {
+   "id": "existentialism",
+   "label": "Existencialismo",
+   "domain": "philosophy",
+   "complexity": 3,
+   "year": 1943,
+   "authors": [
+    "Kierkegaard",
+    "Sartre",
+    "Camus"
+   ],
+   "summary": "La existencia precede a la esencia: el individuo crea sentido en un mundo sin sentido dado."
+  },
+  {
+   "id": "epistemology",
+   "label": "Epistemología",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": 1963,
+   "authors": [
+    "Edmund Gettier",
+    "Karl Popper"
+   ],
+   "summary": "Estudia qué es el conocimiento, cómo se justifica y dónde están sus límites."
+  },
+  {
+   "id": "philosophy_of_mind",
+   "label": "Filosofía de la mente",
+   "domain": "philosophy",
+   "complexity": 3,
+   "year": 1995,
+   "authors": [
+    "David Chalmers",
+    "Daniel Dennett",
+    "John Searle"
+   ],
+   "summary": "¿Qué es la conciencia? Problema difícil de la experiencia subjetiva frente a la explicación funcional."
+  },
+  {
+   "id": "critical_thinking",
+   "label": "Pensamiento crítico",
+   "domain": "philosophy",
+   "complexity": 2,
+   "year": 1910,
+   "authors": [
+    "John Dewey"
+   ],
+   "summary": "Evaluar afirmaciones con evidencia, lógica y conciencia de los propios sesgos antes de aceptarlas."
+  },
+  {
+   "id": "falsificationism",
+   "label": "Falsacionismo",
+   "domain": "philosophy",
+   "complexity": 3,
+   "year": 1934,
+   "authors": [
+    "Karl Popper"
+   ],
+   "summary": "Una teoría es científica si puede, en principio, ser refutada por la observación."
+  },
+  {
+   "id": "paradigm_shifts",
+   "label": "Revoluciones científicas",
+   "domain": "philosophy",
+   "complexity": 3,
+   "year": 1962,
+   "authors": [
+    "Thomas Kuhn"
+   ],
+   "summary": "La ciencia avanza por rupturas de paradigma, no solo por acumulación gradual de hechos."
+  },
+  {
+   "id": "ethics_of_ai",
+   "label": "Ética de la IA",
+   "domain": "philosophy",
+   "complexity": 3,
+   "year": 2014,
+   "authors": [
+    "Nick Bostrom",
+    "Stuart Russell",
+    "Timnit Gebru"
+   ],
+   "summary": "Alineación, sesgo algorítmico, responsabilidad y transparencia de sistemas automáticos."
+  },
+  {
+   "id": "aristotelian_logic",
+   "label": "Lógica aristotélica",
+   "domain": "logic",
+   "complexity": 1,
+   "year": -350,
+   "authors": [
+    "Aristóteles"
+   ],
+   "summary": "Primer sistema formal: silogismos que garantizan que la conclusión se sigue de las premisas."
+  },
+  {
+   "id": "propositional_logic",
+   "label": "Lógica proposicional",
+   "domain": "logic",
+   "complexity": 2,
+   "year": 1854,
+   "authors": [
+    "George Boole",
+    "Crisipo"
+   ],
+   "summary": "Álgebra de proposiciones con conectivos (y, o, no, implica) y tablas de verdad."
+  },
+  {
+   "id": "predicate_logic",
+   "label": "Lógica de predicados",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1879,
+   "authors": [
+    "Gottlob Frege"
+   ],
+   "summary": "Añade cuantificadores (∀, ∃) para razonar sobre objetos y propiedades."
+  },
+  {
+   "id": "set_theory",
+   "label": "Teoría de conjuntos",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1874,
+   "authors": [
+    "Georg Cantor"
+   ],
+   "summary": "Fundamento de la matemática moderna; revela infinitos de distinto tamaño."
+  },
+  {
+   "id": "godel_incompleteness",
+   "label": "Teoremas de incompletitud",
+   "domain": "logic",
+   "complexity": 5,
+   "year": 1931,
+   "authors": [
+    "Kurt Gödel"
+   ],
+   "summary": "Todo sistema formal consistente y suficientemente rico contiene verdades que no puede demostrar."
+  },
+  {
+   "id": "probability",
+   "label": "Probabilidad",
+   "domain": "logic",
+   "complexity": 2,
+   "year": 1654,
+   "authors": [
+    "Pascal",
+    "Fermat",
+    "Kolmogorov"
+   ],
+   "summary": "Cuantifica la incertidumbre; nace de la correspondencia sobre juegos de azar."
+  },
+  {
+   "id": "bayes_theorem",
+   "label": "Teorema de Bayes",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1763,
+   "authors": [
+    "Thomas Bayes",
+    "Laplace"
+   ],
+   "summary": "Regla para actualizar creencias: posterior ∝ verosimilitud × prior."
+  },
+  {
+   "id": "expected_value",
+   "label": "Esperanza matemática",
+   "domain": "logic",
+   "complexity": 2,
+   "year": 1657,
+   "authors": [
+    "Christiaan Huygens",
+    "Pascal"
+   ],
+   "summary": "El valor promedio a largo plazo de una variable aleatoria: E[X] = Σ x·p(x)."
+  },
+  {
+   "id": "variance",
+   "label": "Varianza y desviación",
+   "domain": "logic",
+   "complexity": 2,
+   "year": 1918,
+   "authors": [
+    "Ronald Fisher"
+   ],
+   "summary": "Mide la dispersión alrededor de la esperanza: Var(X) = E[(X−μ)²]."
+  },
+  {
+   "id": "law_large_numbers",
+   "label": "Ley de los grandes números",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1713,
+   "authors": [
+    "Jacob Bernoulli"
+   ],
+   "summary": "El promedio de muchas repeticiones converge a la esperanza."
+  },
+  {
+   "id": "normal_distribution",
+   "label": "Distribución normal",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1809,
+   "authors": [
+    "de Moivre",
+    "Gauss"
+   ],
+   "summary": "La curva de campana, emergente por el teorema central del límite."
+  },
+  {
+   "id": "game_theory",
+   "label": "Teoría de juegos",
+   "domain": "logic",
+   "complexity": 4,
+   "year": 1944,
+   "authors": [
+    "von Neumann",
+    "John Nash"
+   ],
+   "summary": "Decisión estratégica entre agentes interdependientes; equilibrio de Nash."
+  },
+  {
+   "id": "information_theory",
+   "label": "Teoría de la información",
+   "domain": "logic",
+   "complexity": 4,
+   "year": 1948,
+   "authors": [
+    "Claude Shannon"
+   ],
+   "summary": "La información se mide en bits; entropía como incertidumbre media de una fuente."
+  },
+  {
+   "id": "fallacies",
+   "label": "Falacias lógicas",
+   "domain": "logic",
+   "complexity": 2,
+   "year": -350,
+   "authors": [
+    "Aristóteles",
+    "Hamblin"
+   ],
+   "summary": "Errores de razonamiento que parecen válidos pero no sostienen la conclusión."
+  },
+  {
+   "id": "cognitive_biases",
+   "label": "Sesgos cognitivos",
+   "domain": "logic",
+   "complexity": 2,
+   "year": 1974,
+   "authors": [
+    "Daniel Kahneman",
+    "Amos Tversky"
+   ],
+   "summary": "Desviaciones sistemáticas del juicio racional causadas por atajos mentales."
+  },
+  {
+   "id": "calculus",
+   "label": "Cálculo infinitesimal",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1687,
+   "authors": [
+    "Newton",
+    "Leibniz"
+   ],
+   "summary": "Lenguaje del cambio continuo: derivadas e integrales."
+  },
+  {
+   "id": "linear_algebra",
+   "label": "Álgebra lineal",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1844,
+   "authors": [
+    "Grassmann",
+    "Cayley"
+   ],
+   "summary": "Vectores, matrices y transformaciones lineales; lenguaje de los datos."
+  },
+  {
+   "id": "graph_theory",
+   "label": "Teoría de grafos",
+   "domain": "logic",
+   "complexity": 3,
+   "year": 1736,
+   "authors": [
+    "Leonhard Euler"
+   ],
+   "summary": "Estudio matemático de nodos y aristas; nació con los puentes de Königsberg."
+  },
+  {
+   "id": "scientific_method",
+   "label": "Método científico",
+   "domain": "science",
+   "complexity": 2,
+   "year": 1620,
+   "authors": [
+    "Francis Bacon",
+    "Galileo",
+    "Ibn al-Haytham"
+   ],
+   "summary": "Ciclo de observación, hipótesis, experimento y revisión por pares."
+  },
+  {
+   "id": "newtonian_mechanics",
+   "label": "Mecánica newtoniana",
+   "domain": "science",
+   "complexity": 3,
+   "year": 1687,
+   "authors": [
+    "Isaac Newton"
+   ],
+   "summary": "Leyes del movimiento y gravitación universal: un universo predecible."
+  },
+  {
+   "id": "evolution",
+   "label": "Selección natural",
+   "domain": "science",
+   "complexity": 2,
+   "year": 1859,
+   "authors": [
+    "Charles Darwin",
+    "Alfred Wallace"
+   ],
+   "summary": "Variación heredable + presión selectiva = adaptación y diversidad de la vida."
+  },
+  {
+   "id": "genetics_dna",
+   "label": "Genética y ADN",
+   "domain": "science",
+   "complexity": 3,
+   "year": 1953,
+   "authors": [
+    "Watson",
+    "Crick",
+    "Rosalind Franklin"
+   ],
+   "summary": "La herencia se codifica en una molécula; la vida como procesamiento de información."
+  },
+  {
+   "id": "relativity",
+   "label": "Relatividad",
+   "domain": "science",
+   "complexity": 4,
+   "year": 1905,
+   "authors": [
+    "Albert Einstein"
+   ],
+   "summary": "Espacio y tiempo se entrelazan; la gravedad es curvatura del espacio-tiempo."
+  },
+  {
+   "id": "quantum_mechanics",
+   "label": "Mecánica cuántica",
+   "domain": "science",
+   "complexity": 5,
+   "year": 1925,
+   "authors": [
+    "Planck",
+    "Heisenberg",
+    "Schrödinger"
+   ],
+   "summary": "A escala atómica la naturaleza es probabilística; superposición y medición."
+  },
+  {
+   "id": "thermodynamics_entropy",
+   "label": "Termodinámica y entropía",
+   "domain": "science",
+   "complexity": 4,
+   "year": 1850,
+   "authors": [
+    "Clausius",
+    "Boltzmann"
+   ],
+   "summary": "La entropía de un sistema aislado tiende a crecer; flecha del tiempo."
+  },
+  {
+   "id": "neuroscience",
+   "label": "Neurociencia",
+   "domain": "science",
+   "complexity": 3,
+   "year": 1888,
+   "authors": [
+    "Santiago Ramón y Cajal",
+    "Hubel",
+    "Wiesel"
+   ],
+   "summary": "La mente emerge de redes de neuronas que se comunican por sinapsis."
+  },
+  {
+   "id": "complexity_systems",
+   "label": "Sistemas complejos",
+   "domain": "science",
+   "complexity": 4,
+   "year": 1984,
+   "authors": [
+    "Prigogine",
+    "Instituto Santa Fe"
+   ],
+   "summary": "Comportamiento emergente de muchos agentes simples que interactúan."
+  },
+  {
+   "id": "turing_machine",
+   "label": "Máquina de Turing",
+   "domain": "technology",
+   "complexity": 4,
+   "year": 1936,
+   "authors": [
+    "Alan Turing"
+   ],
+   "summary": "Modelo abstracto de computación; define qué es computable."
+  },
+  {
+   "id": "algorithms",
+   "label": "Algoritmos",
+   "domain": "technology",
+   "complexity": 2,
+   "year": 820,
+   "authors": [
+    "al-Khwarizmi",
+    "Donald Knuth"
+   ],
+   "summary": "Procedimientos finitos y precisos para resolver una clase de problemas."
+  },
+  {
+   "id": "symbolic_ai",
+   "label": "IA simbólica",
+   "domain": "technology",
+   "complexity": 3,
+   "year": 1956,
+   "authors": [
+    "John McCarthy",
+    "Marvin Minsky"
+   ],
+   "summary": "Inteligencia como manipulación de símbolos y reglas lógicas explícitas."
+  },
+  {
+   "id": "perceptron",
+   "label": "Perceptrón",
+   "domain": "technology",
+   "complexity": 3,
+   "year": 1958,
+   "authors": [
+    "Frank Rosenblatt"
+   ],
+   "summary": "Primera neurona artificial que aprende: suma ponderada + umbral."
+  },
+  {
+   "id": "backpropagation",
+   "label": "Retropropagación",
+   "domain": "technology",
+   "complexity": 4,
+   "year": 1986,
+   "authors": [
+    "Rumelhart",
+    "Hinton",
+    "Williams"
+   ],
+   "summary": "Calcula gradientes capa por capa con la regla de la cadena para entrenar redes."
+  },
+  {
+   "id": "gradient_descent",
+   "label": "Descenso del gradiente",
+   "domain": "technology",
+   "complexity": 3,
+   "year": 1847,
+   "authors": [
+    "Augustin-Louis Cauchy"
+   ],
+   "summary": "Minimiza una función avanzando en dirección opuesta a su gradiente."
+  },
+  {
+   "id": "neural_networks",
+   "label": "Redes neuronales",
+   "domain": "technology",
+   "complexity": 4,
+   "year": 1986,
+   "authors": [
+    "Geoffrey Hinton",
+    "Yann LeCun",
+    "Yoshua Bengio"
+   ],
+   "summary": "Aproximadores universales de funciones formados por capas de neuronas artificiales."
+  },
+  {
+   "id": "transformers",
+   "label": "Transformers y LLMs",
+   "domain": "technology",
+   "complexity": 5,
+   "year": 2017,
+   "authors": [
+    "Vaswani et al."
+   ],
+   "summary": "Arquitectura basada en atención que da lugar a los modelos de lenguaje actuales."
+  },
+  {
+   "id": "chinese_room",
+   "label": "Habitación china",
+   "domain": "technology",
+   "complexity": 3,
+   "year": 1980,
+   "authors": [
+    "John Searle"
+   ],
+   "summary": "Experimento mental: manipular símbolos no equivale a comprender."
+  },
+  {
+   "id": "internet_hypertext",
+   "label": "Hipertexto y la Web",
+   "domain": "technology",
+   "complexity": 2,
+   "year": 1989,
+   "authors": [
+    "Vannevar Bush",
+    "Ted Nelson",
+    "Tim Berners-Lee"
+   ],
+   "summary": "Documentos enlazados que permiten lectura no lineal: precursor del 'rabbit hole'."
+  },
+  {
+   "id": "cryptography",
+   "label": "Criptografía",
+   "domain": "technology",
+   "complexity": 4,
+   "year": 1977,
+   "authors": [
+    "Rivest",
+    "Shamir",
+    "Adleman"
+   ],
+   "summary": "Matemática para ocultar información y verificar identidad."
+  },
+  {
+   "id": "knowledge_graphs",
+   "label": "Grafos de conocimiento",
+   "domain": "technology",
+   "complexity": 3,
+   "year": 2012,
+   "authors": [
+    "Google",
+    "Tim Berners-Lee"
+   ],
+   "summary": "Entidades y relaciones semánticas representadas como red consultable."
+  },
+  {
+   "id": "rag",
+   "label": "RAG y embeddings",
+   "domain": "technology",
+   "complexity": 4,
+   "year": 2020,
+   "authors": [
+    "Patrick Lewis et al."
+   ],
+   "summary": "Recuperar fragmentos relevantes por similitud vectorial para fundamentar la respuesta de un modelo."
+  },
+  {
+   "id": "athenian_democracy",
+   "label": "Democracia ateniense",
+   "domain": "history",
+   "complexity": 1,
+   "year": -508,
+   "authors": [
+    "Clístenes",
+    "Pericles"
+   ],
+   "summary": "Debate público y retórica como práctica política; contexto de sofistas y Sócrates."
+  },
+  {
+   "id": "library_alexandria",
+   "label": "Biblioteca de Alejandría",
+   "domain": "history",
+   "complexity": 1,
+   "year": -285,
+   "authors": [
+    "Ptolomeo I",
+    "Eratóstenes"
+   ],
+   "summary": "Ambición de reunir todo el saber del mundo conocido."
+  },
+  {
+   "id": "islamic_golden_age",
+   "label": "Edad de Oro islámica",
+   "domain": "history",
+   "complexity": 2,
+   "year": 800,
+   "authors": [
+    "al-Khwarizmi",
+    "Ibn al-Haytham",
+    "Avicena"
+   ],
+   "summary": "Casa de la Sabiduría: traducción, álgebra, óptica experimental y medicina."
+  },
+  {
+   "id": "renaissance",
+   "label": "Renacimiento",
+   "domain": "history",
+   "complexity": 2,
+   "year": 1400,
+   "authors": [
+    "Leonardo",
+    "Alberti",
+    "Erasmo"
+   ],
+   "summary": "Resurgir del humanismo clásico y fusión de arte, ciencia e ingeniería."
+  },
+  {
+   "id": "printing_press",
+   "label": "Imprenta de Gutenberg",
+   "domain": "history",
+   "complexity": 2,
+   "year": 1440,
+   "authors": [
+    "Johannes Gutenberg"
+   ],
+   "summary": "Reproducción barata del texto: acelera la circulación de ideas en Europa."
+  },
+  {
+   "id": "scientific_revolution",
+   "label": "Revolución científica",
+   "domain": "history",
+   "complexity": 3,
+   "year": 1543,
+   "authors": [
+    "Copérnico",
+    "Galileo",
+    "Kepler"
+   ],
+   "summary": "Nace la ciencia moderna: matemática + experimento + instituciones."
+  },
+  {
+   "id": "enlightenment",
+   "label": "Ilustración",
+   "domain": "history",
+   "complexity": 2,
+   "year": 1715,
+   "authors": [
+    "Voltaire",
+    "Kant",
+    "Diderot"
+   ],
+   "summary": "Siglo de la razón, la enciclopedia y los derechos individuales."
+  },
+  {
+   "id": "industrial_revolution",
+   "label": "Revolución industrial",
+   "domain": "history",
+   "complexity": 2,
+   "year": 1760,
+   "authors": [
+    "James Watt"
+   ],
+   "summary": "Mecanización, vapor y urbanización transforman producción y sociedad."
+  },
+  {
+   "id": "ww2_computing",
+   "label": "Computación en la 2ª Guerra Mundial",
+   "domain": "history",
+   "complexity": 3,
+   "year": 1943,
+   "authors": [
+    "Alan Turing",
+    "Tommy Flowers",
+    "Grace Hopper"
+   ],
+   "summary": "Bletchley Park y los primeros computadores electrónicos nacen de la criptoanálisis."
+  },
+  {
+   "id": "perspective_renaissance",
+   "label": "Perspectiva lineal",
+   "domain": "art",
+   "complexity": 2,
+   "year": 1415,
+   "authors": [
+    "Brunelleschi",
+    "Alberti"
+   ],
+   "summary": "Geometría proyectiva para representar profundidad en un plano."
+  },
+  {
+   "id": "golden_ratio",
+   "label": "Proporción áurea",
+   "domain": "art",
+   "complexity": 2,
+   "year": 1509,
+   "authors": [
+    "Luca Pacioli",
+    "Euclides"
+   ],
+   "summary": "φ ≈ 1,618: la razón recurrente en geometría, naturaleza y composición."
+  },
+  {
+   "id": "music_theory_math",
+   "label": "Música y matemática",
+   "domain": "art",
+   "complexity": 2,
+   "year": -530,
+   "authors": [
+    "Pitágoras",
+    "J. S. Bach"
+   ],
+   "summary": "Intervalos como razones numéricas; contrapunto como estructura formal."
+  },
+  {
+   "id": "cubism",
+   "label": "Cubismo",
+   "domain": "art",
+   "complexity": 3,
+   "year": 1907,
+   "authors": [
+    "Picasso",
+    "Braque"
+   ],
+   "summary": "Múltiples puntos de vista simultáneos que rompen con la perspectiva única."
+  },
+  {
+   "id": "surrealism",
+   "label": "Surrealismo",
+   "domain": "art",
+   "complexity": 3,
+   "year": 1924,
+   "authors": [
+    "André Breton",
+    "Salvador Dalí"
+   ],
+   "summary": "Explora el inconsciente y lo irracional como fuente creativa."
+  },
+  {
+   "id": "escher_infinity",
+   "label": "Escher y el infinito",
+   "domain": "art",
+   "complexity": 3,
+   "year": 1948,
+   "authors": [
+    "M. C. Escher"
+   ],
+   "summary": "Teselaciones, bucles imposibles y paradojas visuales con rigor matemático."
+  },
+  {
+   "id": "generative_art",
+   "label": "Arte generativo",
+   "domain": "art",
+   "complexity": 3,
+   "year": 1965,
+   "authors": [
+    "Vera Molnár",
+    "Frieder Nake"
+   ],
+   "summary": "Obra definida por reglas y algoritmos; hoy extendida por redes neuronales."
+  },
+  {
+   "id": "data_visualization",
+   "label": "Visualización de datos",
+   "domain": "art",
+   "complexity": 2,
+   "year": 1869,
+   "authors": [
+    "Charles Minard",
+    "Florence Nightingale",
+    "Edward Tufte"
+   ],
+   "summary": "Arte y ciencia de contar historias con datos de forma honesta."
+  }
+ ],
+ "links": [
+  {
+   "source": "athenian_democracy",
+   "target": "socratic_method",
+   "relation": "influences"
+  },
+  {
+   "source": "athenian_democracy",
+   "target": "fallacies",
+   "relation": "influences"
+  },
+  {
+   "source": "socratic_method",
+   "target": "critical_thinking",
+   "relation": "foundation"
+  },
+  {
+   "source": "socratic_method",
+   "target": "platonic_forms",
+   "relation": "influences"
+  },
+  {
+   "source": "platonic_forms",
+   "target": "aristotelian_logic",
+   "relation": "influences"
+  },
+  {
+   "source": "platonic_forms",
+   "target": "golden_ratio",
+   "relation": "influences"
+  },
+  {
+   "source": "platonic_forms",
+   "target": "music_theory_math",
+   "relation": "influences"
+  },
+  {
+   "source": "aristotelian_logic",
+   "target": "propositional_logic",
+   "relation": "foundation"
+  },
+  {
+   "source": "aristotelian_logic",
+   "target": "fallacies",
+   "relation": "foundation"
+  },
+  {
+   "source": "aristotelian_logic",
+   "target": "scientific_method",
+   "relation": "influences"
+  },
+  {
+   "source": "aristotelian_logic",
+   "target": "symbolic_ai",
+   "relation": "influences"
+  },
+  {
+   "source": "aristotelian_logic",
+   "target": "stoicism",
+   "relation": "influences"
+  },
+  {
+   "source": "stoicism",
+   "target": "propositional_logic",
+   "relation": "foundation"
+  },
+  {
+   "source": "stoicism",
+   "target": "critical_thinking",
+   "relation": "influences"
+  },
+  {
+   "source": "propositional_logic",
+   "target": "predicate_logic",
+   "relation": "extends"
+  },
+  {
+   "source": "propositional_logic",
+   "target": "symbolic_ai",
+   "relation": "foundation"
+  },
+  {
+   "source": "predicate_logic",
+   "target": "godel_incompleteness",
+   "relation": "foundation"
+  },
+  {
+   "source": "set_theory",
+   "target": "predicate_logic",
+   "relation": "foundation"
+  },
+  {
+   "source": "set_theory",
+   "target": "probability",
+   "relation": "foundation"
+  },
+  {
+   "source": "set_theory",
+   "target": "escher_infinity",
+   "relation": "influences"
+  },
+  {
+   "source": "godel_incompleteness",
+   "target": "turing_machine",
+   "relation": "influences"
+  },
+  {
+   "source": "godel_incompleteness",
+   "target": "philosophy_of_mind",
+   "relation": "influences"
+  },
+  {
+   "source": "godel_incompleteness",
+   "target": "escher_infinity",
+   "relation": "influences"
+  },
+  {
+   "source": "turing_machine",
+   "target": "algorithms",
+   "relation": "foundation"
+  },
+  {
+   "source": "turing_machine",
+   "target": "symbolic_ai",
+   "relation": "foundation"
+  },
+  {
+   "source": "turing_machine",
+   "target": "ww2_computing",
+   "relation": "applies"
+  },
+  {
+   "source": "ww2_computing",
+   "target": "cryptography",
+   "relation": "applies"
+  },
+  {
+   "source": "ww2_computing",
+   "target": "game_theory",
+   "relation": "influences"
+  },
+  {
+   "source": "chinese_room",
+   "target": "symbolic_ai",
+   "relation": "contrasts"
+  },
+  {
+   "source": "chinese_room",
+   "target": "philosophy_of_mind",
+   "relation": "extends"
+  },
+  {
+   "source": "islamic_golden_age",
+   "target": "algorithms",
+   "relation": "foundation"
+  },
+  {
+   "source": "islamic_golden_age",
+   "target": "scientific_method",
+   "relation": "influences"
+  },
+  {
+   "source": "islamic_golden_age",
+   "target": "scientific_revolution",
+   "relation": "influences"
+  },
+  {
+   "source": "library_alexandria",
+   "target": "islamic_golden_age",
+   "relation": "influences"
+  },
+  {
+   "source": "library_alexandria",
+   "target": "internet_hypertext",
+   "relation": "influences"
+  },
+  {
+   "source": "scientific_method",
+   "target": "falsificationism",
+   "relation": "extends"
+  },
+  {
+   "source": "falsificationism",
+   "target": "paradigm_shifts",
+   "relation": "contrasts"
+  },
+  {
+   "source": "falsificationism",
+   "target": "epistemology",
+   "relation": "extends"
+  },
+  {
+   "source": "scientific_revolution",
+   "target": "scientific_method",
+   "relation": "foundation"
+  },
+  {
+   "source": "scientific_revolution",
+   "target": "newtonian_mechanics",
+   "relation": "foundation"
+  },
+  {
+   "source": "scientific_revolution",
+   "target": "enlightenment",
+   "relation": "influences"
+  },
+  {
+   "source": "renaissance",
+   "target": "scientific_revolution",
+   "relation": "influences"
+  },
+  {
+   "source": "renaissance",
+   "target": "perspective_renaissance",
+   "relation": "foundation"
+  },
+  {
+   "source": "printing_press",
+   "target": "renaissance",
+   "relation": "enables"
+  },
+  {
+   "source": "printing_press",
+   "target": "scientific_revolution",
+   "relation": "enables"
+  },
+  {
+   "source": "printing_press",
+   "target": "enlightenment",
+   "relation": "enables"
+  },
+  {
+   "source": "internet_hypertext",
+   "target": "knowledge_graphs",
+   "relation": "foundation"
+  },
+  {
+   "source": "graph_theory",
+   "target": "knowledge_graphs",
+   "relation": "foundation"
+  },
+  {
+   "source": "graph_theory",
+   "target": "complexity_systems",
+   "relation": "applies"
+  },
+  {
+   "source": "knowledge_graphs",
+   "target": "rag",
+   "relation": "enables"
+  },
+  {
+   "source": "symbolic_ai",
+   "target": "knowledge_graphs",
+   "relation": "foundation"
+  },
+  {
+   "source": "symbolic_ai",
+   "target": "neural_networks",
+   "relation": "contrasts"
+  },
+  {
+   "source": "perceptron",
+   "target": "symbolic_ai",
+   "relation": "contrasts"
+  },
+  {
+   "source": "perceptron",
+   "target": "neural_networks",
+   "relation": "foundation"
+  },
+  {
+   "source": "neuroscience",
+   "target": "perceptron",
+   "relation": "influences"
+  },
+  {
+   "source": "neuroscience",
+   "target": "philosophy_of_mind",
+   "relation": "influences"
+  },
+  {
+   "source": "calculus",
+   "target": "gradient_descent",
+   "relation": "foundation"
+  },
+  {
+   "source": "calculus",
+   "target": "newtonian_mechanics",
+   "relation": "foundation"
+  },
+  {
+   "source": "gradient_descent",
+   "target": "backpropagation",
+   "relation": "foundation"
+  },
+  {
+   "source": "backpropagation",
+   "target": "neural_networks",
+   "relation": "foundation"
+  },
+  {
+   "source": "linear_algebra",
+   "target": "neural_networks",
+   "relation": "foundation"
+  },
+  {
+   "source": "linear_algebra",
+   "target": "quantum_mechanics",
+   "relation": "foundation"
+  },
+  {
+   "source": "neural_networks",
+   "target": "transformers",
+   "relation": "foundation"
+  },
+  {
+   "source": "neural_networks",
+   "target": "ethics_of_ai",
+   "relation": "influences"
+  },
+  {
+   "source": "neural_networks",
+   "target": "generative_art",
+   "relation": "applies"
+  },
+  {
+   "source": "transformers",
+   "target": "rag",
+   "relation": "foundation"
+  },
+  {
+   "source": "transformers",
+   "target": "ethics_of_ai",
+   "relation": "influences"
+  },
+  {
+   "source": "information_theory",
+   "target": "transformers",
+   "relation": "applies"
+  },
+  {
+   "source": "information_theory",
+   "target": "cryptography",
+   "relation": "foundation"
+  },
+  {
+   "source": "information_theory",
+   "target": "complexity_systems",
+   "relation": "applies"
+  },
+  {
+   "source": "philosophy_of_mind",
+   "target": "ethics_of_ai",
+   "relation": "influences"
+  },
+  {
+   "source": "utilitarianism",
+   "target": "ethics_of_ai",
+   "relation": "influences"
+  },
+  {
+   "source": "ethics_of_ai",
+   "target": "critical_thinking",
+   "relation": "influences"
+  },
+  {
+   "source": "probability",
+   "target": "bayes_theorem",
+   "relation": "foundation"
+  },
+  {
+   "source": "probability",
+   "target": "expected_value",
+   "relation": "foundation"
+  },
+  {
+   "source": "probability",
+   "target": "law_large_numbers",
+   "relation": "foundation"
+  },
+  {
+   "source": "expected_value",
+   "target": "variance",
+   "relation": "extends"
+  },
+  {
+   "source": "expected_value",
+   "target": "game_theory",
+   "relation": "foundation"
+  },
+  {
+   "source": "law_large_numbers",
+   "target": "normal_distribution",
+   "relation": "extends"
+  },
+  {
+   "source": "variance",
+   "target": "normal_distribution",
+   "relation": "applies"
+  },
+  {
+   "source": "normal_distribution",
+   "target": "data_visualization",
+   "relation": "applies"
+  },
+  {
+   "source": "bayes_theorem",
+   "target": "cognitive_biases",
+   "relation": "applies"
+  },
+  {
+   "source": "bayes_theorem",
+   "target": "epistemology",
+   "relation": "applies"
+  },
+  {
+   "source": "bayes_theorem",
+   "target": "scientific_method",
+   "relation": "applies"
+  },
+  {
+   "source": "fallacies",
+   "target": "critical_thinking",
+   "relation": "foundation"
+  },
+  {
+   "source": "cognitive_biases",
+   "target": "critical_thinking",
+   "relation": "foundation"
+  },
+  {
+   "source": "epistemology",
+   "target": "critical_thinking",
+   "relation": "foundation"
+  },
+  {
+   "source": "empiricism",
+   "target": "epistemology",
+   "relation": "foundation"
+  },
+  {
+   "source": "empiricism",
+   "target": "scientific_method",
+   "relation": "foundation"
+  },
+  {
+   "source": "empiricism",
+   "target": "enlightenment",
+   "relation": "influences"
+  },
+  {
+   "source": "empiricism",
+   "target": "rationalism",
+   "relation": "contrasts"
+  },
+  {
+   "source": "empiricism",
+   "target": "kant_critique",
+   "relation": "influences"
+  },
+  {
+   "source": "rationalism",
+   "target": "epistemology",
+   "relation": "foundation"
+  },
+  {
+   "source": "rationalism",
+   "target": "kant_critique",
+   "relation": "influences"
+  },
+  {
+   "source": "rationalism",
+   "target": "calculus",
+   "relation": "influences"
+  },
+  {
+   "source": "rationalism",
+   "target": "propositional_logic",
+   "relation": "influences"
+  },
+  {
+   "source": "kant_critique",
+   "target": "utilitarianism",
+   "relation": "contrasts"
+  },
+  {
+   "source": "kant_critique",
+   "target": "existentialism",
+   "relation": "influences"
+  },
+  {
+   "source": "utilitarianism",
+   "target": "enlightenment",
+   "relation": "extends"
+  },
+  {
+   "source": "enlightenment",
+   "target": "industrial_revolution",
+   "relation": "influences"
+  },
+  {
+   "source": "industrial_revolution",
+   "target": "thermodynamics_entropy",
+   "relation": "influences"
+  },
+  {
+   "source": "industrial_revolution",
+   "target": "data_visualization",
+   "relation": "influences"
+  },
+  {
+   "source": "thermodynamics_entropy",
+   "target": "information_theory",
+   "relation": "influences"
+  },
+  {
+   "source": "thermodynamics_entropy",
+   "target": "complexity_systems",
+   "relation": "foundation"
+  },
+  {
+   "source": "existentialism",
+   "target": "surrealism",
+   "relation": "influences"
+  },
+  {
+   "source": "golden_ratio",
+   "target": "perspective_renaissance",
+   "relation": "influences"
+  },
+  {
+   "source": "music_theory_math",
+   "target": "generative_art",
+   "relation": "influences"
+  },
+  {
+   "source": "algorithms",
+   "target": "generative_art",
+   "relation": "applies"
+  },
+  {
+   "source": "surrealism",
+   "target": "generative_art",
+   "relation": "influences"
+  },
+  {
+   "source": "perspective_renaissance",
+   "target": "cubism",
+   "relation": "contrasts"
+  },
+  {
+   "source": "escher_infinity",
+   "target": "perspective_renaissance",
+   "relation": "extends"
+  },
+  {
+   "source": "relativity",
+   "target": "cubism",
+   "relation": "influences"
+  },
+  {
+   "source": "relativity",
+   "target": "quantum_mechanics",
+   "relation": "contrasts"
+  },
+  {
+   "source": "relativity",
+   "target": "paradigm_shifts",
+   "relation": "applies"
+  },
+  {
+   "source": "newtonian_mechanics",
+   "target": "relativity",
+   "relation": "extends"
+  },
+  {
+   "source": "quantum_mechanics",
+   "target": "probability",
+   "relation": "applies"
+  },
+  {
+   "source": "evolution",
+   "target": "genetics_dna",
+   "relation": "foundation"
+  },
+  {
+   "source": "evolution",
+   "target": "cognitive_biases",
+   "relation": "influences"
+  },
+  {
+   "source": "evolution",
+   "target": "paradigm_shifts",
+   "relation": "applies"
+  },
+  {
+   "source": "genetics_dna",
+   "target": "information_theory",
+   "relation": "influences"
+  },
+  {
+   "source": "game_theory",
+   "target": "evolution",
+   "relation": "applies"
+  },
+  {
+   "source": "complexity_systems",
+   "target": "evolution",
+   "relation": "applies"
+  },
+  {
+   "source": "data_visualization",
+   "target": "critical_thinking",
+   "relation": "applies"
+  },
+  {
+   "source": "enlightenment",
+   "target": "kant_critique",
+   "relation": "influences"
+  },
+  {
+   "source": "predicate_logic",
+   "target": "symbolic_ai",
+   "relation": "foundation"
+  },
+  {
+   "source": "expected_value",
+   "target": "utilitarianism",
+   "relation": "influences"
+  },
+  {
+   "source": "variance",
+   "target": "evolution",
+   "relation": "applies"
+  },
+  {
+   "source": "law_large_numbers",
+   "target": "scientific_method",
+   "relation": "applies"
+  },
+  {
+   "source": "backpropagation",
+   "target": "neuroscience",
+   "relation": "contrasts"
+  },
+  {
+   "source": "rag",
+   "target": "critical_thinking",
+   "relation": "applies"
+  },
+  {
+   "source": "printing_press",
+   "target": "internet_hypertext",
+   "relation": "influences"
+  }
+ ],
+ "paths": [
+  {
+   "id": "aristotle-to-llm",
+   "title": "De Aristóteles a los Transformers",
+   "description": "Cómo la lógica formal desembocó en la IA moderna y por qué importa el pensamiento crítico.",
+   "nodes": [
+    "aristotelian_logic",
+    "propositional_logic",
+    "turing_machine",
+    "symbolic_ai",
+    "perceptron",
+    "neural_networks",
+    "transformers",
+    "ethics_of_ai",
+    "critical_thinking"
+   ]
+  },
+  {
+   "id": "critical-thinking",
+   "title": "Pensamiento crítico completo",
+   "description": "Del diálogo socrático a la detección de falacias y sesgos.",
+   "nodes": [
+    "socratic_method",
+    "aristotelian_logic",
+    "fallacies",
+    "cognitive_biases",
+    "bayes_theorem",
+    "critical_thinking"
+   ]
+  },
+  {
+   "id": "probability-decisions",
+   "title": "Probabilidad para decidir",
+   "description": "De los juegos de azar a la actualización bayesiana de creencias.",
+   "nodes": [
+    "probability",
+    "expected_value",
+    "variance",
+    "law_large_numbers",
+    "normal_distribution",
+    "bayes_theorem"
+   ]
+  },
+  {
+   "id": "art-and-math",
+   "title": "Arte y matemática",
+   "description": "Proporciones, perspectiva y algoritmos como herramientas de creación.",
+   "nodes": [
+    "platonic_forms",
+    "golden_ratio",
+    "perspective_renaissance",
+    "cubism",
+    "generative_art"
+   ]
+  },
+  {
+   "id": "how-science-changes",
+   "title": "Cómo cambia la ciencia",
+   "description": "Método, refutación y rupturas de paradigma.",
+   "nodes": [
+    "scientific_method",
+    "falsificationism",
+    "paradigm_shifts",
+    "relativity",
+    "quantum_mechanics"
+   ]
+  }
+ ]
+}

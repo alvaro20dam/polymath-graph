@@ -1,0 +1,740 @@
+{
+ "fallacies": [
+  {
+   "id": "ad_hominem",
+   "kind": "informal",
+   "name": "Ad hominem",
+   "name_en": "Ad hominem",
+   "definition": "Se ataca a la persona que sostiene el argumento en lugar del argumento.",
+   "example": "No hagas caso de su teoría sobre el clima: es un fracasado.",
+   "counter": "Pregunta: ¿qué tiene que ver el carácter de la persona con la validez de la premisa? Evalúa la evidencia por separado.",
+   "patterns": [
+    "\\b(eres|es|son|sois) (un |una |el |la )?(idiota|estupido|estupida|ignorante|tonto|tonta|mentiroso|mentirosa|imbecil|fracasado|fracasada)",
+    "\\b(you are|you're|he is|she is|they are) (an? )?(idiot|stupid|ignorant|liar|moron|fool|loser)",
+    "\\bque (va a|sabra|sabe) (saber )?(el|ella|ese|esa|este|esta)\\b",
+    "\\bwhat does (he|she) know"
+   ]
+  },
+  {
+   "id": "false_dilemma",
+   "kind": "informal",
+   "name": "Falso dilema",
+   "name_en": "False dilemma",
+   "definition": "Se presentan solo dos opciones como si fueran las únicas, ocultando alternativas intermedias.",
+   "example": "O estás con nosotros o estás contra nosotros.",
+   "counter": "Busca una tercera opción: ¿hay un punto medio, una combinación o una opción ausente?",
+   "patterns": [
+    "\\bo (estas|estás|eres|esta|es) con (nosotros|migo|nosotras) o (estas|eres|esta|es)? ?contra",
+    "\\bsolo (hay|existen|tenemos|tienes) (dos|2) (opciones|caminos|alternativas)",
+    "\\b(either|it's either|its either) .{1,60} or\\b",
+    "\\bno hay (otra|mas) (opcion|alternativa|salida|camino)\\b"
+   ]
+  },
+  {
+   "id": "slippery_slope",
+   "kind": "informal",
+   "name": "Pendiente resbaladiza",
+   "name_en": "Slippery slope",
+   "definition": "Se afirma que un primer paso conducirá inevitablemente a una cadena de consecuencias extremas, sin demostrar cada eslabón.",
+   "example": "Si permitimos los apuntes en el examen, acabarán copiando todo y nadie estudiará nunca más.",
+   "counter": "Pide la evidencia de cada eslabón: ¿qué probabilidad tiene cada paso y por qué sería inevitable?",
+   "patterns": [
+    "\\bacabar(a|an|emos|ia|ian) (por )?",
+    "\\bterminar(a|an|emos|ia|ian) (por )?",
+    "\\bantes de (que )?(te|nos) (des|demos) cuenta",
+    "\\bif we (allow|let|permit) .{1,80} (next|soon|eventually|will end up)",
+    "\\bslippery slope",
+    "\\bpoco a poco .{1,60} (todo|nadie|siempre)"
+   ]
+  },
+  {
+   "id": "straw_man",
+   "kind": "informal",
+   "name": "Hombre de paja",
+   "name_en": "Straw man",
+   "definition": "Se distorsiona o exagera la postura del oponente para refutar una versión más débil que la real.",
+   "example": "—Deberíamos reducir el gasto militar. —Así que quieres dejar el país indefenso.",
+   "counter": "Reformula la postura original con sus propias palabras y pregunta si esa es realmente la tesis a debatir.",
+   "patterns": [
+    "\\bentonces (lo que )?(dices|quieres decir|propones) (es )?que\\b",
+    "\\bo sea que (quieres|dices|propones)\\b",
+    "\\bso (you're|you are) saying\\b",
+    "\\bso what you('re| are) saying is\\b",
+    "\\bsegun tu (logica|razonamiento),? (entonces )?"
+   ]
+  },
+  {
+   "id": "appeal_authority",
+   "kind": "informal",
+   "name": "Apelación a la autoridad",
+   "name_en": "Appeal to authority",
+   "definition": "Se acepta una afirmación solo porque la dice una autoridad, sin experiencia relevante o sin evidencia.",
+   "example": "Un famoso actor dice que esta dieta cura todo; por eso funciona.",
+   "counter": "¿La persona es experta en ESTE campo? ¿Hay consenso de expertos y evidencia verificable independiente?",
+   "patterns": [
+    "\\b(lo dice|lo dijo|lo afirma|lo asegura) (un |una |el |la )?(famoso|famosa|doctor|doctora|profesor|profesora|experto|experta|cientifico|cientifica|premio nobel|actor|actriz)",
+    "\\b(famous|renowned) .{1,30} (says|said|claims)",
+    "\\bexperts? (say|says|claim|claims)\\b",
+    "\\bsegun (el|la) (doctor|doctora|experto|experta|profesor|profesora)\\b.{0,40}(por lo tanto|por eso|asi que|entonces)"
+   ]
+  },
+  {
+   "id": "appeal_tradition",
+   "kind": "informal",
+   "name": "Apelación a la tradición",
+   "name_en": "Appeal to tradition",
+   "definition": "Se defiende algo porque siempre se ha hecho así.",
+   "example": "Siempre se ha enseñado de memoria, así que es el mejor método.",
+   "counter": "La antigüedad no prueba corrección: muchas prácticas antiguas fueron abandonadas. Pide razones actuales.",
+   "patterns": [
+    "\\bsiempre se ha hecho asi\\b",
+    "\\bsiempre (ha sido|hemos hecho|se ha hecho)\\b",
+    "\\bde toda la vida\\b",
+    "\\ba(si)? se ha hecho (siempre|desde)\\b",
+    "\\bwe('ve| have) always done\\b",
+    "\\bthat's how it's always been\\b",
+    "\\bhas always been done\\b",
+    "\\bes tradicion\\b"
+   ]
+  },
+  {
+   "id": "ad_populum",
+   "kind": "informal",
+   "name": "Ad populum (apelación a la mayoría)",
+   "name_en": "Bandwagon",
+   "definition": "Se considera verdadera una idea porque mucha gente la cree o la practica.",
+   "example": "Millones de personas usan homeopatía; no puede ser falsa.",
+   "counter": "La popularidad no equivale a verdad. Pide evidencia independiente de cuánta gente lo cree.",
+   "patterns": [
+    "\\b(todo el mundo|todos|la mayoria|millones de personas|mucha gente|nadie) (lo )?(cree|piensa|sabe|hace|usa|dice|compra|opina)",
+    "\\beveryone (knows|thinks|believes|does|says|agrees)",
+    "\\bmillions of people\\b",
+    "\\bmost people (believe|think|agree)\\b",
+    "\\bcomo (todos|todo el mundo) sabe"
+   ]
+  },
+  {
+   "id": "post_hoc",
+   "kind": "informal",
+   "name": "Causa falsa (post hoc ergo propter hoc)",
+   "name_en": "Post hoc",
+   "definition": "Se concluye que A causó B solo porque B ocurrió después de A.",
+   "example": "Me puse la camiseta de la suerte y ganamos; la camiseta nos hizo ganar.",
+   "counter": "Busca explicaciones alternativas, causa común, azar y un mecanismo plausible. Un control o contraejemplo sin A pero con B lo derriba.",
+   "patterns": [
+    "\\bdespues de (que )?.{1,70}(por eso|por lo tanto|asi que|entonces|eso (demuestra|prueba)|fue (por|a causa))",
+    "\\bdesde que .{1,70}(es (por|culpa)|se debe|por eso|eso (demuestra|prueba))",
+    "\\bafter (i|we|he|she|they) .{1,70}(that('s| is) why|therefore|so it|proves)",
+    "\\bsince (i|we|he|she|they) .{1,70}(that('s| is) why|proves|because of)",
+    "\\bcausa (falsa|equivocada)\\b"
+   ]
+  },
+  {
+   "id": "cum_hoc",
+   "kind": "informal",
+   "name": "Correlación implica causalidad (cum hoc)",
+   "name_en": "Cum hoc / correlation ≠ causation",
+   "definition": "Se infiere causalidad a partir de una simple correlación, ignorando variables ocultas o causalidad inversa.",
+   "example": "Las ventas de helado y los ahogamientos suben juntas, luego el helado causa ahogamientos.",
+   "counter": "Pregunta por una tercera variable (el calor), la dirección de la causa y si hay un experimento controlado.",
+   "patterns": [
+    "\\b(correlacion|se correlaciona|estan correlacionad[oa]s|va de la mano|van de la mano|aumentan juntos|suben juntos|crecen juntos).{0,80}(causa|provoca|produce|por eso|demuestra|prueba)",
+    "\\b(correlat|go hand in hand|rise together|increase together).{0,80}(cause|causes|proves|therefore|so)"
+   ]
+  },
+  {
+   "id": "begging_question",
+   "kind": "informal",
+   "name": "Petición de principio (circularidad)",
+   "name_en": "Begging the question",
+   "definition": "La conclusión ya está supuesta en las premisas; el argumento da vueltas en círculo.",
+   "example": "La Biblia es verdad porque dice que es palabra de Dios, y Dios no miente.",
+   "counter": "Señala que la premisa solo es aceptable si ya se acepta la conclusión. Pide una premisa independiente.",
+   "patterns": [
+    "\\bporque (lo dice|asi lo dice|asi esta escrito|es asi porque)",
+    "\\b(es verdad|es cierto|es correcto) porque (es verdad|es cierto|es correcto|lo es)",
+    "\\bbecause (it|that) (says|is) (so|true)",
+    "\\bis true because it (says|states)\\b",
+    "\\bporque si\\b"
+   ]
+  },
+  {
+   "id": "appeal_pity",
+   "kind": "informal",
+   "name": "Apelación a la emoción (ad misericordiam)",
+   "name_en": "Appeal to emotion",
+   "definition": "Se busca persuadir provocando lástima, miedo o indignación en lugar de aportar razones.",
+   "example": "Si no apruebas mi propuesta, miles de niños sufrirán por tu culpa.",
+   "counter": "Separa la emoción legítima de la evidencia: ¿la conclusión se sigue de los hechos o solo del sentimiento?",
+   "patterns": [
+    "\\bpiensa en (los|las|el|la) (ninos|ninas|familias|victimas|pobres|abuelos)",
+    "\\b(pobrecit[oa]s?|que pena|ten piedad|ten compasion)\\b",
+    "\\bthink of the children\\b",
+    "\\bhave (some )?(pity|mercy)\\b",
+    "\\bsi no (aprueba|apoya|haces|firmas).{1,60}(sufriran|moriran|lloraran|culpa)"
+   ]
+  },
+  {
+   "id": "appeal_ignorance",
+   "kind": "informal",
+   "name": "Apelación a la ignorancia",
+   "name_en": "Appeal to ignorance",
+   "definition": "Se afirma que algo es verdadero porque no se ha probado falso (o viceversa).",
+   "example": "Nadie ha demostrado que los fantasmas no existan, luego existen.",
+   "counter": "La carga de la prueba la tiene quien afirma. La ausencia de evidencia no es evidencia de lo contrario, ni de lo afirmado.",
+   "patterns": [
+    "\\bnadie (ha )?(demostrado|probado) que (no|nunca)",
+    "\\bnadie (ha )?(podido )?(demostrar|probar) (lo contrario|que no|que es falso)",
+    "\\bno (se ha|han) (demostrado|probado) (lo contrario|que (no|sea falso|es falso))",
+    "\\bno one has (ever )?(proven|proved|shown|disproved) (that )?",
+    "\\byou can't prove (it|that) (is |isn't|wrong|false|doesn't)",
+    "\\bno puedes (probar|demostrar) que (no|es falso)"
+   ]
+  },
+  {
+   "id": "tu_quoque",
+   "kind": "informal",
+   "name": "Tu quoque (tú también)",
+   "name_en": "Tu quoque",
+   "definition": "Se desvía la crítica señalando que el acusador también incurre en la conducta criticada.",
+   "example": "Me dices que no fume, pero tú fumaste años.",
+   "counter": "La incoherencia del interlocutor no vuelve falsa su afirmación; evalúa el argumento aparte.",
+   "patterns": [
+    "\\by tu (que|tambien)\\b",
+    "\\bt[uú] (tambien|igual) (lo haces|lo hiciste|fumas|mientes|lo hacias)",
+    "\\bpero t[uú] (tambien|mismo|misma)\\b",
+    "\\bwho are you to (talk|say|judge)",
+    "\\byou (do|did) it too\\b",
+    "\\byou too\\b"
+   ]
+  },
+  {
+   "id": "hasty_generalization",
+   "kind": "informal",
+   "name": "Generalización apresurada",
+   "name_en": "Hasty generalization",
+   "definition": "Se extrae una regla general de una muestra pequeña o no representativa.",
+   "example": "Conocí a dos turistas groseros; todos los turistas de ese país son groseros.",
+   "counter": "¿Cuál es el tamaño y la representatividad de la muestra? Busca contraejemplos.",
+   "patterns": [
+    "\\b(todos|todas|nadie|nunca|siempre|jamas) (los|las)? ?\\w+ (son|siempre|nunca|hacen|tienen)\\b.{0,60}\\b(conoci|conozco|vi|visto|un amigo|mi primo|mi vecino|una vez|una experiencia)",
+    "\\b(conoci|conozco|vi|conocia) (a )?(un|una|dos|tres|algunos|unos)\\b.{0,80}\\b(todos|todas|siempre|nunca)\\b",
+    "\\b(i met|i know|i saw) (a |one |two |three |some )\\b.{0,80}\\b(all|every|always|never)\\b",
+    "\\b(todos|todas) (los|las) \\w+ son\\b",
+    "\\ball \\w+ are\\b"
+   ]
+  },
+  {
+   "id": "gamblers",
+   "kind": "informal",
+   "name": "Falacia del jugador",
+   "name_en": "Gambler's fallacy",
+   "definition": "Creer que eventos independientes 'se compensan': tras una racha, lo contrario es más probable.",
+   "example": "Salió rojo cinco veces seguidas; ahora toca negro.",
+   "counter": "Si los ensayos son independientes, la probabilidad no cambia. Usa la simulación de la ley de grandes números en el Laboratorio.",
+   "patterns": [
+    "\\b(ya|va a) (toca|tiene que|debe) (salir|caer|ganar|tocar|perder)",
+    "\\bme toca (ganar|ya)\\b",
+    "\\bracha\\b.{0,60}\\b(ahora|ya|tiene que|va a)\\b",
+    "\\b(is|are) due (for|to)\\b",
+    "\\bhas to (come up|land|hit) (soon|now)\\b",
+    "\\bafter (so many|\\d+) (heads|tails|reds|blacks|losses|wins)\\b"
+   ]
+  },
+  {
+   "id": "genetic",
+   "kind": "informal",
+   "name": "Falacia genética",
+   "name_en": "Genetic fallacy",
+   "definition": "Se juzga una idea por su origen en lugar de por sus méritos actuales.",
+   "example": "Esa fórmula de diseño surgió en una empresa corrupta, así que es inútil.",
+   "counter": "El origen de una idea es independiente de su validez. Evalúa la evidencia actual.",
+   "patterns": [
+    "\\bviene de (una |un |la |el )?(empresa|partido|secta|pais|persona|fuente|gente|religion).{0,40}(asi que|por eso|luego|entonces|por lo tanto|no puede|no sirve)",
+    "\\bcomes from (a |an |the )?.{1,40}(so|therefore|thus) (it|that)",
+    "\\bfue inventad[oa] por\\b.{0,60}\\b(asi que|por eso|entonces)",
+    "\\bsu origen\\b.{0,40}\\b(demuestra|prueba|invalida)"
+   ]
+  },
+  {
+   "id": "appeal_nature",
+   "kind": "informal",
+   "name": "Apelación a la naturaleza",
+   "name_en": "Appeal to nature",
+   "definition": "Se asume que lo natural es bueno o seguro y lo artificial es malo.",
+   "example": "Es un producto 100% natural, por lo tanto es seguro.",
+   "counter": "Lo natural puede ser letal (veneno de serpiente) y lo artificial salvador (vacunas). Evalúa evidencia, no etiquetas.",
+   "patterns": [
+    "\\b(es|son) (100% |totalmente |completamente )?natural(es)?,? (por lo tanto|asi que|por eso|entonces|luego|y por eso)",
+    "\\b(100% natural|totalmente natural).{0,40}\\b(seguro|sano|bueno|saludable|inofensivo)\\b",
+    "\\bnatural(es)? (es|son) (mejor|sano|seguro|bueno)\\b",
+    "\\b(it's|it is|its) natural,? (so|therefore)\\b",
+    "\\bnatural (means|is) (safe|good|healthy|better)\\b",
+    "\\bquimic[oa]s? (son|es) malo"
+   ]
+  },
+  {
+   "id": "no_true_scotsman",
+   "kind": "informal",
+   "name": "Ningún verdadero escocés",
+   "name_en": "No true Scotsman",
+   "definition": "Ante un contraejemplo, se redefine el grupo ad hoc para excluirlo y salvar la generalización.",
+   "example": "—Ningún escocés echa azúcar al porridge. —Mi tío es escocés y lo hace. —Entonces no es un verdadero escocés.",
+   "counter": "Pide el criterio de pertenencia ANTES del contraejemplo. Si cambia tras el caso, es una defensa ad hoc.",
+   "patterns": [
+    "\\bningun (verdadero|autentico|buen|autentica|verdadera) \\w+\\b",
+    "\\b(un|una) (verdadero|autentico|autentica|verdadera|buen|buena) \\w+ (nunca|no|jamas)\\b",
+    "\\bentonces no (es|era|fue) (un|una) (verdader[oa]|autentic[oa]|buen[oa])\\b",
+    "\\bno true \\w+ would\\b",
+    "\\ba (real|true|genuine) \\w+ would(n't| never| not)\\b",
+    "\\bthen he (isn't|is not|wasn't) a (real|true)\\b"
+   ]
+  },
+  {
+   "id": "red_herring",
+   "kind": "informal",
+   "name": "Pista falsa (red herring)",
+   "name_en": "Red herring",
+   "definition": "Se introduce un tema irrelevante para desviar la atención del asunto en discusión.",
+   "example": "—¿Por qué subió el precio? —¿Y qué pasa con la inflación del año pasado en otros países?",
+   "counter": "Reconduce al tema: 'Eso es otro asunto; volvamos a la pregunta original'.",
+   "patterns": [
+    "\\by (que|qué) (pasa|hay|tal) (con|de)\\b",
+    "\\bpero (lo importante|el verdadero problema|lo que realmente importa) (es|son)\\b",
+    "\\bmejor hablemos de\\b",
+    "\\bwhat about\\b",
+    "\\bthe real (issue|problem) is\\b",
+    "\\blet's talk about .{1,40} instead\\b",
+    "\\bcambiando de tema\\b"
+   ]
+  },
+  {
+   "id": "composition",
+   "kind": "informal",
+   "name": "Falacia de composición",
+   "name_en": "Fallacy of composition",
+   "definition": "Se supone que lo cierto de las partes lo es también del todo.",
+   "example": "Cada ladrillo es liviano, así que la pared es liviana.",
+   "counter": "Las propiedades emergentes pueden diferir: busca el contraejemplo con ladrillos livianos y un muro pesado.",
+   "patterns": [
+    "\\bcada (parte|pieza|miembro|jugador|integrante|ladrillo|atomo|celula|componente) (es|son|esta).{1,80}(por lo tanto|asi que|entonces|luego|por eso).{0,40}(el|la|todo|todo el|el conjunto|el equipo|el sistema)\\b",
+    "\\beach (part|piece|member|player|brick|atom|cell|component) (is|are).{1,80}(therefore|so|thus).{0,40}(the whole|the team|the system)\\b",
+    "\\bel equipo (esta formado|tiene) .{1,60}(mejores|buenos|estrellas).{0,50}(sera|tiene que ser|es el mejor)"
+   ]
+  },
+  {
+   "id": "division",
+   "kind": "informal",
+   "name": "Falacia de división",
+   "name_en": "Fallacy of division",
+   "definition": "Se supone que lo cierto del todo lo es de cada una de sus partes.",
+   "example": "Esa empresa es rica, por lo tanto cada empleado es rico.",
+   "counter": "Una propiedad del conjunto no se hereda automáticamente por sus elementos: busca un contraejemplo.",
+   "patterns": [
+    "\\b(el equipo|la empresa|el pais|la clase|la familia|el grupo) es (rico|rica|excelente|brillante|pobre|el mejor|ganador|inteligente).{1,80}(por lo tanto|asi que|entonces|luego|por eso).{0,40}(cada|todos|todas|seguro que)\\b",
+    "\\bthe (team|company|country|class|family|group) is (rich|excellent|brilliant|poor|the best|smart).{1,80}(therefore|so|thus).{0,40}(each|every|all)\\b"
+   ]
+  },
+  {
+   "id": "affirming_consequent",
+   "kind": "formal",
+   "name": "Afirmación del consecuente",
+   "name_en": "Affirming the consequent",
+   "definition": "Forma inválida: Si P entonces Q; Q; luego P. Aceptar Q no garantiza P.",
+   "example": "Si llueve, la calle se moja. La calle está mojada. Luego llovió.",
+   "counter": "Hay otras causas de Q (camión de limpieza). Verifica en el Laboratorio de Lógica con tablas de verdad: existe una fila con premisas verdaderas y conclusión falsa.",
+   "patterns": [
+    "afirmacion del consecuente",
+    "affirming the consequent"
+   ]
+  },
+  {
+   "id": "denying_antecedent",
+   "kind": "formal",
+   "name": "Negación del antecedente",
+   "name_en": "Denying the antecedent",
+   "definition": "Forma inválida: Si P entonces Q; no P; luego no Q.",
+   "example": "Si estudias, apruebas. No estudiaste. Luego no aprobarás.",
+   "counter": "Q puede darse por otra vía (suerte, otro método). Construye la tabla de verdad para exhibir el contraejemplo.",
+   "patterns": [
+    "negacion del antecedente",
+    "denying the antecedent"
+   ]
+  },
+  {
+   "id": "equivocation",
+   "kind": "informal",
+   "name": "Equivocación",
+   "name_en": "Equivocation",
+   "definition": "Se usa una palabra con dos sentidos distintos dentro del mismo argumento.",
+   "example": "Los gatos tienen cola. Mi gato hidráulico tiene cola. (mismo término, otro sentido)",
+   "counter": "Define el término clave y comprueba que significa lo mismo en cada premisa.",
+   "patterns": [
+    "\\bdepende de (que|lo que) (entendamos|entiendas) por\\b",
+    "\\ben (otro|cierto) sentido de la palabra\\b",
+    "\\bequivocaci[oó]n\\b",
+    "\\bin (another|a different) sense of the word\\b",
+    "\\bequivocation\\b",
+    "\\bjugando con (las palabras|el significado)\\b"
+   ]
+  }
+ ],
+ "biases": [
+  {
+   "id": "confirmation",
+   "name": "Sesgo de confirmación",
+   "name_en": "Confirmation bias",
+   "definition": "Buscamos, recordamos e interpretamos la información de modo que confirme lo que ya creemos.",
+   "example": "Solo leo noticias que coinciden con mi opinión política.",
+   "antidote": "Busca activamente la evidencia que refutaría tu hipótesis.",
+   "patterns": [
+    "\\bsolo (leo|escucho|sigo|miro|veo) (noticias|medios|gente|fuentes|cuentas)? ?(que|de)\\b",
+    "\\bsiempre (confirmo|encuentro) (que )?(tenia|tengo) razon",
+    "\\bi (only|just) (read|listen|follow|watch) .{1,40}(agree|confirm)",
+    "\\bsabia que (tenia razon|era asi)\\b",
+    "\\bya lo sabia\\b"
+   ]
+  },
+  {
+   "id": "anchoring",
+   "name": "Efecto ancla",
+   "name_en": "Anchoring",
+   "definition": "Dependemos demasiado de la primera cifra o dato que recibimos al decidir.",
+   "example": "El precio original tachado me hizo ver la oferta como una ganga.",
+   "antidote": "Genera tu propia estimación antes de ver el número inicial.",
+   "patterns": [
+    "\\b(precio|valor) (original|inicial|tachado|anterior)\\b.{0,60}\\b(ganga|oferta|descuento|barato)",
+    "\\bwas \\$?\\d+.{0,30}now \\$?\\d+",
+    "\\bcomparado con el precio (original|inicial)\\b",
+    "\\banclad[oa]\\b"
+   ]
+  },
+  {
+   "id": "availability",
+   "name": "Heurística de disponibilidad",
+   "name_en": "Availability heuristic",
+   "definition": "Juzgamos la probabilidad de algo por la facilidad con que acuden ejemplos a la mente.",
+   "example": "Tras ver noticias de accidentes aéreos, creo que volar es más peligroso que conducir.",
+   "antidote": "Consulta estadísticas base en lugar de memoria o noticias recientes.",
+   "patterns": [
+    "\\b(vi|lei|escuche) (en|las) (noticias|television|redes).{0,80}\\b(peligroso|riesgoso|frecuente|comun|siempre pasa|cada vez mas)",
+    "\\bi (saw|read|heard) (on|in) the news.{0,80}\\b(dangerous|risky|common|always happens|more and more)",
+    "\\b(esta|estan) (por )?(todas partes|en todos lados)\\b.{0,40}(noticias|redes)",
+    "\\bcada vez hay mas .{1,40} (segun|en) (las )?(noticias|redes)"
+   ]
+  },
+  {
+   "id": "dunning_kruger",
+   "name": "Efecto Dunning-Kruger",
+   "name_en": "Dunning-Kruger effect",
+   "definition": "Con poco conocimiento solemos sobreestimar nuestra competencia; con mucho, podemos subestimarla.",
+   "example": "Leí un artículo sobre medicina y ya sé más que los médicos.",
+   "antidote": "Contrasta tu criterio con el de expertos y busca feedback objetivo.",
+   "patterns": [
+    "\\bsé más que (los|las|el|la) (medicos|doctores|expertos|profesores|cientificos|ingenieros|abogados)",
+    "\\bse mas que (los|las|el|la) (medicos|doctores|expertos|profesores|cientificos|ingenieros|abogados)",
+    "\\bi know more than (the )?(doctors|experts|scientists|professors|engineers|lawyers)",
+    "\\bes (muy |super )?facil,? (cualquiera|yo) (lo hace|podria|puede)\\b",
+    "\\b(me )?lei un (articulo|hilo|post) .{1,50}ya (se|soy)\\b",
+    "\\bdo your own research\\b"
+   ]
+  },
+  {
+   "id": "hindsight",
+   "name": "Sesgo retrospectivo",
+   "name_en": "Hindsight bias",
+   "definition": "Tras conocer el resultado, creemos que era obvio y que lo habíamos previsto.",
+   "example": "Sabía que esa empresa quebraría, era evidente.",
+   "antidote": "Anota tus predicciones por escrito antes de conocer los resultados.",
+   "patterns": [
+    "\\bya lo (sabia|sabia yo|vi venir|dije)\\b",
+    "\\bera (obvio|evidente|previsible|de esperar)\\b",
+    "\\bse veia venir\\b",
+    "\\bi knew (it|that) (all along|would happen)\\b",
+    "\\bit was (obvious|predictable) (all along|from the start)\\b",
+    "\\bwas bound to happen\\b"
+   ]
+  },
+  {
+   "id": "survivorship",
+   "name": "Sesgo de supervivencia",
+   "name_en": "Survivorship bias",
+   "definition": "Analizamos solo los casos que 'sobrevivieron' y olvidamos los que fracasaron y desaparecieron del registro.",
+   "example": "Los grandes empresarios abandonaron la universidad, así que abandonarla funciona.",
+   "antidote": "Pregunta: ¿qué pasó con quienes hicieron lo mismo y fracasaron?",
+   "patterns": [
+    "\\b(los|las) (grandes|exitosos|exitosas|mejores) (empresarios|fundadores|artistas|deportistas|genios).{0,60}(abandonaron|dejaron|no (terminaron|estudiaron)|empezaron)",
+    "\\b(successful|great|famous) (founders|entrepreneurs|artists|athletes).{0,60}(dropped out|quit|never finished|started)",
+    "\\bsi (ellos|el|ella) (pudo|pudieron),? (yo|tu|cualquiera) (tambien )?(puedo|puedes|puede)\\b",
+    "\\bsurvivorship\\b"
+   ]
+  },
+  {
+   "id": "halo",
+   "name": "Efecto halo",
+   "name_en": "Halo effect",
+   "definition": "Una cualidad positiva (p. ej. atractivo) hace que atribuyamos otras cualidades positivas no relacionadas.",
+   "example": "Es muy guapo, seguro que también es muy inteligente y honesto.",
+   "antidote": "Evalúa cada atributo por separado y con criterios objetivos.",
+   "patterns": [
+    "\\bes (muy )?(guap[oa]|atractiv[oa]|famos[oa]|simpatic[oa]|carismatic[oa]).{0,60}\\b(seguro que|asi que|entonces|debe ser|tiene que ser).{0,40}(inteligente|honest[oa]|bueno|buena|capaz|competente)",
+    "\\b(he|she) is (so )?(handsome|beautiful|attractive|famous|charming).{0,60}\\b(must be|surely|so he|so she).{0,40}(smart|intelligent|honest|good|capable)"
+   ]
+  },
+  {
+   "id": "framing",
+   "name": "Efecto de encuadre",
+   "name_en": "Framing effect",
+   "definition": "Nuestra decisión cambia según cómo se presenta la misma información (ganancias vs. pérdidas).",
+   "example": "'90% de supervivencia' suena mejor que '10% de mortalidad'.",
+   "antidote": "Reformula el dato en el marco opuesto y compara tu reacción.",
+   "patterns": [
+    "\\b\\d+ ?% (de )?(supervivencia|exito|libre de grasa|de aprobacion)",
+    "\\b\\d+ ?% (survival|success|fat[- ]free|approval)\\b",
+    "\\bse presenta como (una )?(ganancia|perdida|oportunidad)\\b",
+    "\\bframing\\b",
+    "\\bencuadre\\b"
+   ]
+  },
+  {
+   "id": "sunk_cost",
+   "name": "Falacia del costo hundido",
+   "name_en": "Sunk cost fallacy",
+   "definition": "Seguimos invirtiendo en algo por lo ya gastado, aunque su continuación no tenga sentido.",
+   "example": "Ya pagué la entrada, así que me quedo aunque la película sea horrible.",
+   "antidote": "Decide mirando solo costos y beneficios futuros.",
+   "patterns": [
+    "\\bya (pague|gaste|invertí|inverti|llevo) .{1,60}(asi que|por eso|entonces|no (puedo|voy a)).{0,40}(seguir|continuar|quedar|abandonar|rendir|dejar)",
+    "\\bno puedo (abandonar|dejarlo|rendirme) (ahora )?(despues de|tras) (todo )?(lo que|el dinero|el tiempo)",
+    "\\bi('ve| have) already (paid|spent|invested).{1,60}(so|therefore|can't|cannot|might as well)",
+    "\\bafter all (the|this) (time|money|effort)",
+    "\\btanto (tiempo|dinero|esfuerzo) (invertido|gastado|perdido)"
+   ]
+  },
+  {
+   "id": "status_quo",
+   "name": "Sesgo del statu quo",
+   "name_en": "Status quo bias",
+   "definition": "Preferimos que las cosas sigan como están, aunque el cambio sea ventajoso.",
+   "example": "Mejor dejo mi plan de teléfono aunque pago de más.",
+   "antidote": "Imagina que partes de cero: ¿elegirías la situación actual?",
+   "patterns": [
+    "\\bmejor (dejarlo|dejemos|que siga|no cambiar|no tocar|lo dejo) (asi|como esta|igual)\\b",
+    "\\bmas vale (lo conocido|malo conocido)\\b",
+    "\\bif it ain't broke\\b",
+    "\\bbetter the devil you know\\b",
+    "\\bno cambiemos nada\\b"
+   ]
+  },
+  {
+   "id": "loss_aversion",
+   "name": "Aversión a la pérdida",
+   "name_en": "Loss aversion",
+   "definition": "Una pérdida duele aproximadamente el doble de lo que alegra una ganancia equivalente.",
+   "example": "No vendo la acción que baja para no 'materializar' la pérdida.",
+   "antidote": "Compara resultados finales esperados, no ganancias o pérdidas respecto a un punto de referencia.",
+   "patterns": [
+    "\\bno (quiero|puedo|voy a) (perder|vender (en|con) perdida)",
+    "\\bprefiero no arriesgar (lo que|mi)\\b",
+    "\\bperder (duele|es peor) (mas )?(que|de lo que) ganar",
+    "\\bi (don't|do not|can't) want to lose\\b",
+    "\\bnot worth the risk of losing\\b",
+    "\\bloss aversion\\b"
+   ]
+  },
+  {
+   "id": "overconfidence",
+   "name": "Exceso de confianza",
+   "name_en": "Overconfidence",
+   "definition": "Nuestra confianza en nuestros juicios excede su exactitud real.",
+   "example": "Estoy 100% seguro de que el proyecto estará listo el viernes.",
+   "antidote": "Da rangos de confianza y revisa tu calibración con el tiempo.",
+   "patterns": [
+    "\\b(estoy|estamos) (100 ?%|totalmente|absolutamente|completamente) (seguro|segura|seguros|convencido|convencida)\\b",
+    "\\b(sin duda alguna|no hay (ninguna )?duda|garantizado|imposible que (falle|me equivoque))\\b",
+    "\\bi('m| am) (100 ?%|absolutely|completely|totally) (sure|certain|positive)\\b",
+    "\\bthere('s| is) no way (i|we|it) (am|are|is|could be) wrong\\b",
+    "\\bno puedo equivocarme\\b"
+   ]
+  },
+  {
+   "id": "groupthink",
+   "name": "Pensamiento grupal",
+   "name_en": "Groupthink",
+   "definition": "La búsqueda de armonía en el grupo suprime el disenso y el análisis crítico.",
+   "example": "Nadie objetó el plan para no romper la unanimidad.",
+   "antidote": "Asigna un 'abogado del diablo' y recoge opiniones por escrito antes de debatir.",
+   "patterns": [
+    "\\bno (quiero|queremos|vamos a) (romper|arruinar) (la|el) (unanimidad|armonia|consenso|ambiente)",
+    "\\bpara no (ser el unico|quedar mal|llevar la contraria|discrepar)",
+    "\\bnadie (se atrevio|objeto|dijo nada)\\b",
+    "\\bwe all (agree|agreed)\\b.{0,40}\\b(no need|don't need|no point)\\b",
+    "\\bdidn't want to rock the boat\\b",
+    "\\bgroupthink\\b"
+   ]
+  },
+  {
+   "id": "fundamental_attribution",
+   "name": "Error fundamental de atribución",
+   "name_en": "Fundamental attribution error",
+   "definition": "Explicamos la conducta ajena por su carácter e ignoramos el contexto; con la propia hacemos lo contrario.",
+   "example": "Llegó tarde porque es irresponsable (no pensé que hubiera tráfico).",
+   "antidote": "Pregúntate: ¿qué factores situacionales podrían explicar esa conducta?",
+   "patterns": [
+    "\\bllego tarde porque es (un |una )?(irresponsable|vago|vaga|desorganizad[oa]|flojo|floja|perezos[oa])",
+    "\\bhizo eso porque es (un |una )?(egoista|mala persona|malo|mala|tonto|tonta)",
+    "\\b(he|she) (was late|failed|messed up) because (he|she) is (lazy|irresponsible|careless|stupid)",
+    "\\bes (asi|así) por (su )?(forma de ser|naturaleza|caracter)\\b"
+   ]
+  },
+  {
+   "id": "self_serving",
+   "name": "Sesgo de autoservicio",
+   "name_en": "Self-serving bias",
+   "definition": "Atribuimos los éxitos a nuestro mérito y los fracasos a factores externos.",
+   "example": "Aprobé por mi talento; reprobé porque el examen estaba mal hecho.",
+   "antidote": "Analiza qué parte del resultado dependió de ti en éxitos y en fracasos por igual.",
+   "patterns": [
+    "\\breprobe porque (el|la|los|las) (profesor|profesora|examen|prueba|jefe|suerte|tema)",
+    "\\bme fue mal porque (el|la|los|las) (profesor|profesora|examen|prueba|jefe|suerte|tema)",
+    "\\bi failed because (the|my) (teacher|exam|test|boss|bad luck)",
+    "\\bmi (exito|logro) (se debe|es mio|fue mi merito).{0,60}\\b(fracaso|fallo).{0,40}\\b(culpa|por)\\b",
+    "\\bno fue mi culpa\\b"
+   ]
+  },
+  {
+   "id": "barnum",
+   "name": "Efecto Barnum (Forer)",
+   "name_en": "Barnum effect",
+   "definition": "Aceptamos descripciones vagas y generales como si fueran personalizadas y precisas.",
+   "example": "El horóscopo describe mi personalidad exactamente.",
+   "antidote": "Pregunta si la descripción serviría igual para casi cualquier persona; pide predicciones falsables.",
+   "patterns": [
+    "\\bel horoscopo (me )?(describe|dice|acerto)\\b",
+    "\\bmi signo (dice|describe|explica)",
+    "\\bmy horoscope (describes|says|is spot on)",
+    "\\b(me describe|describe mi personalidad) (perfectamente|exactamente)\\b",
+    "\\bdescribes? me perfectly\\b",
+    "\\btest de personalidad (me )?(acerto|describe)\\b"
+   ]
+  },
+  {
+   "id": "illusion_control",
+   "name": "Ilusión de control",
+   "name_en": "Illusion of control",
+   "definition": "Sobreestimamos nuestra influencia sobre eventos mayormente azarosos.",
+   "example": "Lanzo los dados con más fuerza cuando necesito un número alto.",
+   "antidote": "Distingue entre decisiones controlables y resultados determinados por azar.",
+   "patterns": [
+    "\\b(sopl[oa]|lanzo|tiro|tiré|tire) (los dados|la moneda).{0,40}(fuerte|suerte|para que)",
+    "\\bmi (numero|ritual|amuleto|camiseta) de la suerte\\b",
+    "\\bmy lucky (number|shirt|charm|ritual)\\b",
+    "\\bblow(ing)? on the dice\\b",
+    "\\bsiento que (puedo|controlo) (el|la) (azar|suerte|resultado)\\b"
+   ]
+  },
+  {
+   "id": "planning_fallacy",
+   "name": "Falacia de planificación",
+   "name_en": "Planning fallacy",
+   "definition": "Subestimamos sistemáticamente tiempo, costos y riesgos de nuestros proyectos.",
+   "example": "Terminaré la tesis en dos semanas (como los otros proyectos que se retrasaron meses).",
+   "antidote": "Usa datos de proyectos similares (visión externa) y añade margen.",
+   "patterns": [
+    "\\bme (lleva|llevara|tomara|toma) (solo |apenas )?(un (par|rato)|dos dias|una semana|unas horas|un fin de semana)",
+    "\\b(lo|la) (termino|acabo|hago) (en|para) (un par de|dos|tres|unas) (horas|dias|semanas)\\b",
+    "\\bit('ll| will) (only )?take (me )?(a couple|an hour|two days|a week|a weekend)",
+    "\\bshould be (done|finished) (in|by) (no time|tomorrow|friday)\\b",
+    "\\bsera (rapido|facil|cosa de) (horas|dias|nada)\\b"
+   ]
+  },
+  {
+   "id": "negativity",
+   "name": "Sesgo de negatividad",
+   "name_en": "Negativity bias",
+   "definition": "Damos más peso a lo negativo que a lo positivo de igual magnitud.",
+   "example": "Recibí diez elogios y una crítica; solo recuerdo la crítica.",
+   "antidote": "Lleva un registro explícito de eventos positivos y compara con el negativo.",
+   "patterns": [
+    "\\bsolo (recuerdo|me acuerdo|pienso en|me quedo con) (la |lo |el )?(critica|negativo|malo|error|fallo)",
+    "\\bi only (remember|think about|focus on) the (criticism|negative|bad|mistake)",
+    "\\bde (diez|10|cien|100|muchos) .{1,40} (solo|nada mas) (recuerdo|me quedo con) (el|la|lo) (malo|negativo|critica)",
+    "\\b(todo|todo lo) (sale|va) mal\\b"
+   ]
+  },
+  {
+   "id": "mere_exposure",
+   "name": "Efecto de mera exposición",
+   "name_en": "Mere-exposure effect",
+   "definition": "Tendemos a preferir lo que nos resulta familiar solo por haberlo visto muchas veces.",
+   "example": "Esa marca me gusta más porque la veo en todos lados.",
+   "antidote": "Compara con alternativas desconocidas en pruebas a ciegas.",
+   "patterns": [
+    "\\bme gusta (mas )?porque (la|lo) (veo|escucho|conozco) (en todos lados|siempre|a cada rato|mucho)",
+    "\\bi like (it|that) (more )?because i (see|hear) it (everywhere|all the time|so often)",
+    "\\bme suena (mas )?(confiable|bueno|seguro) porque (es|me suena) (conocid[oa]|familiar)\\b",
+    "\\bfamiliar(idad)? (me da|es) (confianza|seguridad)\\b"
+   ]
+  },
+  {
+   "id": "representativeness",
+   "name": "Sesgo de representatividad",
+   "name_en": "Representativeness heuristic",
+   "definition": "Juzgamos la probabilidad por el parecido con un estereotipo e ignoramos las tasas base.",
+   "example": "Es tímido y ordenado, seguro es bibliotecario (aunque hay muchos más agricultores).",
+   "antidote": "Considera siempre las tasas base: ¿qué proporción de la población tiene ese perfil?",
+   "patterns": [
+    "\\b(parece|tiene pinta de|se ve como|tiene cara de) (un |una )?\\w+,? (asi que|seguro|seguramente|debe ser|tiene que ser)",
+    "\\b(he|she) (looks|seems|sounds) like (a|an) \\w+,? (so|therefore|must be|probably)",
+    "\\bencaja (con|en) el (perfil|estereotipo)\\b.{0,40}\\b(seguro|por eso|asi que)",
+    "\\bfits the (profile|stereotype)\\b"
+   ]
+  },
+  {
+   "id": "blind_spot",
+   "name": "Punto ciego de sesgos",
+   "name_en": "Bias blind spot",
+   "definition": "Reconocemos los sesgos en los demás pero creemos que nosotros estamos libres de ellos.",
+   "example": "Los demás se dejan manipular por la publicidad; yo no.",
+   "antidote": "Asume que los sesgos te afectan igual; usa listas de verificación objetivas.",
+   "patterns": [
+    "\\b(yo )?no (me dejo|me influyo|me manipulan|caigo en) (influenciar|manipular|ese tipo de|esas cosas)",
+    "\\b(los demas|la gente|los otros) (se dejan|son) (manipular|manipulad[oa]s|sesgad[oa]s).{0,50}\\b(yo no|pero yo)\\b",
+    "\\bi('m| am) (not|never) (influenced|biased|manipulated)",
+    "\\bother people are biased,? but (i|me)\\b",
+    "\\bsoy (totalmente |muy )?objetiv[oa]\\b",
+    "\\bi('m| am) (completely |totally |very )?objective\\b"
+   ]
+  },
+  {
+   "id": "endowment",
+   "name": "Efecto de dotación",
+   "name_en": "Endowment effect",
+   "definition": "Valoramos más un objeto por el hecho de poseerlo.",
+   "example": "Pido por mi coche usado más de lo que pagaría por uno idéntico.",
+   "antidote": "Pregúntate cuánto pagarías por ello si no lo tuvieras.",
+   "patterns": [
+    "\\bmi (coche|auto|casa|carro|telefono|bici) (vale|es) (mucho )?(mas|mejor)\\b",
+    "\\bno (lo|la) vendo (por|a ese precio)",
+    "\\bmy (car|house|phone|bike) is worth more\\b",
+    "\\bi('d| would) never sell (it|this) for that\\b",
+    "\\bpara mi vale mas porque es mio\\b"
+   ]
+  },
+  {
+   "id": "optimism",
+   "name": "Sesgo de optimismo",
+   "name_en": "Optimism bias",
+   "definition": "Creemos que es menos probable que nos sucedan eventos negativos que a los demás.",
+   "example": "A mí no me va a pasar un accidente; eso les pasa a otros.",
+   "antidote": "Usa estadísticas de población como punto de partida de tu riesgo.",
+   "patterns": [
+    "\\ba mi no me (va a|pasara|pasa|sucedera|ocurrira)\\b",
+    "\\beso (solo )?(le pasa|les pasa) a (otros|los demas|otra gente)\\b",
+    "\\bit (won't|will not|can't) happen to me\\b",
+    "\\bthat only happens to other people\\b",
+    "\\bi('ll| will) be (fine|okay),? (nothing|it won't)\\b"
+   ]
+  }
+ ]
+}

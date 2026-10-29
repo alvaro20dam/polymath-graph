@@ -1,0 +1,762 @@
+{
+ "problems": [
+  {
+   "id": "bayes_test",
+   "node": "bayes_theorem",
+   "level": 3,
+   "title": "El positivo que engaña",
+   "prompt": "Una enfermedad afecta al 1% de la población. Una prueba detecta al 90% de los enfermos (sensibilidad) pero da positivo en el 9% de los sanos (falsos positivos). Si das positivo, ¿cuál es, aproximadamente, la probabilidad de que estés enfermo?",
+   "steps": [
+    "Imagina 10.000 personas.",
+    "¿Cuántas están enfermas? ¿Cuántas de ellas dan positivo?",
+    "¿Cuántas sanas dan positivo?",
+    "Entre todos los positivos, ¿qué fracción está realmente enferma?"
+   ],
+   "concepts": [
+    {
+     "id": "base_rate",
+     "name": "Tasa base (prior)",
+     "keywords": [
+      "prevalencia",
+      "tasa base",
+      "base rate",
+      "prior",
+      "1 ?%",
+      "0[.,]01",
+      "100 (est[aá]n )?(enferm[ao]s|personas)",
+      "rara"
+     ],
+     "question": "Antes de la prueba, ¿qué proporción de la población está enferma? ¿Cómo debería afectar que la enfermedad sea rara a tu respuesta?",
+     "hints": [
+      "Piensa en una ciudad de 10.000 personas. ¿Cuántas estarían enfermas antes de hacer ninguna prueba?",
+      "Esa proporción inicial se llama tasa base o prior. ¿Pesa mucho o poco frente a la precisión de la prueba?",
+      "Si solo 100 de 10.000 están enfermas, ¿cuántas están sanas? ¿Qué te dice eso sobre el número de falsos positivos posibles?"
+     ]
+    },
+    {
+     "id": "false_pos",
+     "name": "Falsos positivos entre los sanos",
+     "keywords": [
+      "falso",
+      "sanos?",
+      "9 ?%",
+      "0[.,]09",
+      "891",
+      "false positive"
+     ],
+     "question": "Además de los enfermos que dan positivo, ¿quién más da positivo? ¿Cuántos son, en comparación?",
+     "hints": [
+      "Un positivo puede venir de dos grupos distintos. ¿Cuáles?",
+      "El 9% se aplica al grupo de los sanos. ¿Cuántos sanos hay en tu población de ejemplo?",
+      "Calcula 9% de 9.900 sanos. Compáralo con los verdaderos positivos."
+     ]
+    },
+    {
+     "id": "joint",
+     "name": "Probabilidad conjunta",
+     "keywords": [
+      "0[.,]9 ?(x|\\*|por|\\u00d7) ?0[.,]01",
+      "0[.,]009",
+      "90 (enfermos|personas|positivos)",
+      "90 de",
+      "multipl",
+      "sensibilidad"
+     ],
+     "question": "¿Cuántos de los enfermos darían positivo? ¿Cómo calcularías ese número a partir de la sensibilidad y la prevalencia?",
+     "hints": [
+      "Aplica la sensibilidad solo al grupo que está realmente enfermo.",
+      "90% de 100 enfermos... ¿cuántos son?",
+      "Tienes 90 verdaderos positivos y unos 891 falsos positivos. ¿Qué te falta para la probabilidad?"
+     ]
+    },
+    {
+     "id": "normalization",
+     "name": "Normalización (posterior)",
+     "keywords": [
+      "dividi",
+      "entre (el )?total",
+      "total de positivos",
+      "posterior",
+      "981",
+      "0[.,]0981",
+      "denominador",
+      "de todos los positivos",
+      "bayes"
+     ],
+     "question": "Ya sabes cuántos positivos son verdaderos y cuántos falsos. ¿Qué fracción del TOTAL de positivos corresponde a los enfermos?",
+     "hints": [
+      "La pregunta es condicional: 'dado que di positivo'. ¿Cuál es entonces tu universo de personas?",
+      "Divide los verdaderos positivos entre todos los positivos (verdaderos + falsos).",
+      "90 / (90 + 891) = ? Expresa el resultado en porcentaje."
+     ]
+    },
+    {
+     "id": "result",
+     "name": "Resultado (~9%)",
+     "keywords": [
+      "(^|[^0-9])9([.,][0-9]+)? ?%",
+      "0[.,]09[0-9]*($|[^0-9])",
+      "alrededor de (un )?9",
+      "casi (un )?10 ?%",
+      "9[.,]2"
+     ],
+     "question": "Con los números que tienes, ¿qué porcentaje obtienes? ¿Te sorprende comparado con la sensibilidad de la prueba?",
+     "hints": [
+      "Haz la división y expresa el porcentaje.",
+      "El resultado es menor a 10%. ¿Por qué es tan bajo si la prueba detecta al 90%?",
+      "Compara P(positivo | enfermo) con P(enfermo | positivo): no son lo mismo."
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(probabilidad|prob|chance)[^.]{0,50}(enfermo|enferma)[^.]{0,30}\\b(es|seria|son|de|del|=) ?(un |de )?(90 ?%|0[.,]9)($|[^0-9])|90 ?% (de )?(probabilidad|chance)[^.]{0,30}enferm",
+     "response": "Parece que estás dando la sensibilidad, P(positivo | enfermo). Pero la pregunta es la inversa: P(enfermo | positivo). ¿Son la misma cosa? ¿Qué papel juega que la enfermedad sea rara?"
+    },
+    {
+     "pattern": "(91|90) ?%.*(sano|falso)",
+     "response": "Cuidado: mezclar los porcentajes de grupos distintos (enfermos y sanos) sin ponderar por su tamaño lleva a errores. ¿Cuántas personas hay en cada grupo?"
+    }
+   ],
+   "synthesis": "Con 10.000 personas: 90 verdaderos positivos y ≈891 falsos positivos. P(enfermo | +) = 90/981 ≈ 9,2%. La tasa base baja drásticamente el valor de un positivo; es el corazón de la actualización bayesiana.",
+   "related": [
+    "bayes_theorem",
+    "probability",
+    "cognitive_biases"
+   ]
+  },
+  {
+   "id": "expected_value_dice",
+   "node": "expected_value",
+   "level": 2,
+   "title": "El dado de la apuesta",
+   "prompt": "Te proponen lanzar un dado justo: si sale 6 ganas $10; si sale cualquier otro número pierdes $2. ¿Te conviene jugar muchas veces? Justifica con el valor esperado.",
+   "steps": [
+    "Lista todos los resultados posibles y su probabilidad.",
+    "Asigna a cada resultado su ganancia o pérdida.",
+    "Pondera: ¿cómo se combinan valores y probabilidades?",
+    "Interpreta el signo del resultado a largo plazo."
+   ],
+   "concepts": [
+    {
+     "id": "probs",
+     "name": "Probabilidades de los resultados",
+     "keywords": [
+      "1/6",
+      "5/6",
+      "16[.,]?6",
+      "83[.,]?3",
+      "0[.,]166",
+      "0[.,]83",
+      "un sexto",
+      "cinco sextos"
+     ],
+     "question": "¿Cuál es la probabilidad de ganar y cuál la de perder en un solo lanzamiento?",
+     "hints": [
+      "Un dado tiene 6 caras equiprobables. ¿Cuántas te hacen ganar?",
+      "La probabilidad de ganar es 1/6. ¿Y la de perder, usando el complemento?",
+      "P(perder) = 5/6. Con eso ya puedes ponderar."
+     ]
+    },
+    {
+     "id": "weighted_sum",
+     "name": "Suma ponderada",
+     "keywords": [
+      "multipl",
+      "ponder",
+      "promedio",
+      "sum",
+      "valor esperado",
+      "esperanza",
+      "e\\[x\\]",
+      "expected"
+     ],
+     "question": "Tienes dos resultados con distinto pago y probabilidad. ¿Cómo combinarías esas cantidades en un solo número que resuma el juego?",
+     "hints": [
+      "Un promedio simple de +10 y −2 ignoraría que perder es mucho más probable. ¿Cómo darle más peso al más probable?",
+      "Multiplica cada pago por su probabilidad y suma.",
+      "E = 10·(1/6) + (−2)·(5/6). Calcula cada término."
+     ]
+    },
+    {
+     "id": "calc",
+     "name": "Cálculo del valor esperado",
+     "keywords": [
+      "10/6",
+      "1[.,]6",
+      "10 ?\\* ?\\(?1/6",
+      "0 ?(\\$|dolares)?($|[^0-9.,])",
+      "cero",
+      "igual a 0",
+      "= ?0\\b",
+      "juego justo",
+      "equitativo",
+      "justo"
+     ],
+     "question": "Haz la cuenta: ¿cuánto vale, en promedio, cada partida? ¿Sale positivo, negativo o cero?",
+     "hints": [
+      "10/6 es aproximadamente 1,67. ¿Cuánto es 2·5/6?",
+      "Compara ambos términos: ¿qué ocurre al restarlos?",
+      "El resultado es exactamente 0: ni ganas ni pierdes en promedio."
+     ]
+    },
+    {
+     "id": "long_run",
+     "name": "Ley de grandes números",
+     "keywords": [
+      "largo plazo",
+      "muchas veces",
+      "ley de (los )?grandes numeros",
+      "converge",
+      "promedio tiende",
+      "a la larga",
+      "long run",
+      "muchas partidas",
+      "varianza",
+      "racha"
+     ],
+     "question": "¿Qué significa realmente 'en promedio' para alguien que juega 10 veces frente a alguien que juega 10.000? ¿Garantiza el valor esperado algo en una partida?",
+     "hints": [
+      "El valor esperado habla del promedio de MUCHAS repeticiones, no de cada una.",
+      "En pocas partidas la varianza domina: puedes ganar o perder bastante.",
+      "Prueba el simulador de 'Esperanza y grandes números' en el Laboratorio con p = 1/6."
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(conviene|vale la pena|gana(re|ras)|es rentable).*(porque|ya que).*(10|gran premio|premio)",
+     "response": "El premio es grande, pero ¿qué tan seguido ocurre? Un buen análisis compara el tamaño del premio y su probabilidad a la vez."
+    },
+    {
+     "pattern": "(despues de|tras) .*(perder|racha).*(toca|tiene que|debe).*(ganar|salir)",
+     "response": "Eso suena a la falacia del jugador. ¿Los lanzamientos del dado dependen unos de otros?"
+    }
+   ],
+   "synthesis": "E = 10·(1/6) − 2·(5/6) = 0. Es un juego justo: a largo plazo no ganas ni pierdes, aunque en pocas partidas la varianza puede darte rachas favorables o desfavorables.",
+   "related": [
+    "expected_value",
+    "law_large_numbers",
+    "variance"
+   ]
+  },
+  {
+   "id": "gradient_lr",
+   "node": "gradient_descent",
+   "level": 3,
+   "title": "La tasa de aprendizaje",
+   "prompt": "Minimizas f(x) = x² con descenso del gradiente empezando en x = 4. ¿Qué ocurre si la tasa de aprendizaje es 0,1 y qué ocurre si es 1,1? Explica por qué.",
+   "steps": [
+    "Calcula la derivada f'(x).",
+    "Escribe la regla de actualización x ← ...",
+    "Sustituye y simplifica: ¿por qué factor se multiplica x en cada paso?",
+    "Decide en qué casos |factor| < 1."
+   ],
+   "concepts": [
+    {
+     "id": "gradient",
+     "name": "Gradiente (derivada)",
+     "keywords": [
+      "2 ?x",
+      "derivada",
+      "gradiente",
+      "f'\\(x\\)",
+      "f ?prime",
+      "pendiente"
+     ],
+     "question": "¿Cuánto vale la derivada de x²? ¿Qué te dice su signo sobre hacia dónde debes moverte?",
+     "hints": [
+      "Recuerda: la derivada de x^n es n·x^(n−1).",
+      "f'(x) = 2x. En x = 4 vale 8: ¿la función crece o decrece ahí?",
+      "El gradiente apunta hacia donde la función SUBE. Entonces, ¿en qué dirección conviene moverse para minimizar?"
+     ]
+    },
+    {
+     "id": "update_rule",
+     "name": "Regla de actualización",
+     "keywords": [
+      "x ?[-−] ?(lr|alpha|eta|\\u03b1|\\u03b7|tasa|0[.,]1|1[.,]1) ?\\*? ?(\\*|·|\\u00b7)? ?(2 ?x|grad|f')",
+      "x ?(<-|←|=) ?x ?[-−]",
+      "restar",
+      "opuesto al gradiente",
+      "direccion contraria",
+      "x_?\\{?(n|t|k) ?\\+ ?1"
+     ],
+     "question": "¿Cómo se usa el gradiente y la tasa de aprendizaje para calcular el siguiente x a partir del actual?",
+     "hints": [
+      "Nuevo x = x actual menos algo. ¿Qué es ese 'algo'?",
+      "Ese algo es la tasa de aprendizaje multiplicada por el gradiente.",
+      "x_nuevo = x − η·2x. Factoriza x."
+     ]
+    },
+    {
+     "id": "factor",
+     "name": "Factor de contracción (1 − 2η)",
+     "keywords": [
+      "1 ?[-−] ?2 ?(\\*|·)? ?(η|eta|lr|\\u03b7|alpha)",
+      "0[.,]8",
+      "[-−] ?1[.,]2",
+      "1[.,]2",
+      "factor",
+      "multiplica por",
+      "razon"
+     ],
+     "question": "Si x_nuevo = x·(algo), ¿cuál es ese 'algo' para η = 0,1 y para η = 1,1? ¿Qué pasa con |x| al repetir?",
+     "hints": [
+      "Factoriza: x_nuevo = x·(1 − 2η).",
+      "Con η = 0,1 el factor es 0,8; con η = 1,1 es −1,2.",
+      "Si |factor| < 1, |x| se encoge cada paso; si es > 1, crece. ¿Cuál es tu caso?"
+     ]
+    },
+    {
+     "id": "conclusion",
+     "name": "Convergencia vs. divergencia",
+     "keywords": [
+      "diverg",
+      "oscil",
+      "converge",
+      "explot",
+      "se aleja",
+      "no converge",
+      "inestable",
+      "se acerca (a|al) (0|cero|minimo)"
+     ],
+     "question": "Con base en ese factor, ¿qué trayectoria sigue x en cada caso? ¿Qué lección da sobre elegir η?",
+     "hints": [
+      "Con 0,8 los valores son 4, 3,2, 2,56, ... ¿hacia dónde van?",
+      "Con −1,2 los valores son 4, −4,8, 5,76, ... ¿qué ocurre con su magnitud?",
+      "Prueba ambas tasas en el simulador 'Descenso del gradiente' del Laboratorio."
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(mayor|mas grande|alta).*(tasa|lr|eta).*(siempre )?(mejor|mas rapido|converge mas rapido)",
+     "response": "Una tasa mayor da pasos más grandes, pero ¿pueden esos pasos 'pasarse' del mínimo? Calcula qué ocurre con x en los primeros pasos."
+    }
+   ],
+   "synthesis": "x_{n+1} = x_n(1 − 2η). Con η = 0,1 el factor es 0,8 y x → 0 (converge). Con η = 1,1 el factor es −1,2: |x| crece oscilando y diverge. Existe un rango de η estables, aquí 0 < η < 1.",
+   "related": [
+    "gradient_descent",
+    "calculus",
+    "backpropagation"
+   ]
+  },
+  {
+   "id": "syllogism_validity",
+   "node": "aristotelian_logic",
+   "level": 1,
+   "title": "¿Válido o verdadero?",
+   "prompt": "Considera: «Todos los filósofos son mortales. Sócrates es mortal. Por lo tanto, Sócrates es filósofo.» ¿Es un argumento válido? ¿Importa que las premisas sean verdaderas?",
+   "steps": [
+    "Identifica la forma: Todos A son B; c es B; luego c es A.",
+    "Busca un caso con la misma forma y premisas verdaderas, pero conclusión falsa.",
+    "Distingue validez de verdad."
+   ],
+   "concepts": [
+    {
+     "id": "form",
+     "name": "Forma lógica",
+     "keywords": [
+      "forma",
+      "estructura",
+      "todos .* son .*",
+      "a ?(es|son) ?b",
+      "silogismo",
+      "esquema"
+     ],
+     "question": "Olvida los nombres concretos: ¿cuál es la forma abstracta de este argumento con letras?",
+     "hints": [
+      "Sustituye 'filósofos' por A, 'mortales' por B y 'Sócrates' por c.",
+      "Queda: Todo A es B; c es B; luego c es A.",
+      "Compara con el silogismo válido: Todo A es B; c es A; luego c es B. ¿Qué cambió?"
+     ]
+    },
+    {
+     "id": "counterexample",
+     "name": "Contraejemplo",
+     "keywords": [
+      "contraejemplo",
+      "perro",
+      "gato",
+      "caballo",
+      "otro ejemplo",
+      "por ejemplo",
+      "cualquier (animal|ser)",
+      "counterexample"
+     ],
+     "question": "¿Puedes construir un argumento con EXACTAMENTE la misma forma pero con premisas obviamente verdaderas y conclusión obviamente falsa?",
+     "hints": [
+      "Cambia 'filósofo' por otra categoría: 'Todos los gatos son mortales...'",
+      "Elige un c que sea mortal pero que claramente no pertenezca a A (por ejemplo, un perro).",
+      "Todos los gatos son mortales; Fido (un perro) es mortal; luego Fido es gato. ¿Y ahora?"
+     ]
+    },
+    {
+     "id": "invalid",
+     "name": "Veredicto: inválido",
+     "keywords": [
+      "invalid",
+      "no es valid",
+      "no se sigue",
+      "falac",
+      "no es correcto",
+      "no vale",
+      "no es un argumento valido"
+     ],
+     "question": "Si la misma forma puede llevar de premisas verdaderas a conclusión falsa, ¿qué dice eso de la forma?",
+     "hints": [
+      "Un argumento es válido si NO hay manera de que las premisas sean verdaderas y la conclusión falsa.",
+      "Tu contraejemplo muestra que sí hay manera. ¿Qué concluyes?",
+      "Esta forma de error se llama 'afirmación del consecuente' o 'término medio no distribuido'."
+     ]
+    },
+    {
+     "id": "valid_true",
+     "name": "Validez ≠ verdad",
+     "keywords": [
+      "valid.*verdad",
+      "verdad.*valid",
+      "premisas verdaderas",
+      "independ",
+      "una cosa es",
+      "distin",
+      "no es lo mismo"
+     ],
+     "question": "¿Qué diferencia hay entre que un argumento sea válido y que sus premisas o conclusión sean verdaderas? ¿Puede un argumento tener conclusión verdadera y ser inválido?",
+     "hints": [
+      "Validez es una propiedad de la forma del razonamiento; verdad, de las afirmaciones.",
+      "Aquí la conclusión podría ser verdadera (Sócrates sí era filósofo) y el argumento sigue siendo inválido.",
+      "Valida y premisas verdaderas ⇒ conclusión verdadera (argumento sólido). ¿Qué pasa si falla alguna condición?"
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(es valido|valido).*(porque|ya que).*(socrates|verdad|cierto|verdadero)",
+     "response": "Estás juzgando la verdad de la conclusión. La validez trata de si la conclusión SE SIGUE de las premisas. ¿Puedes hallar un caso de la misma forma con premisas verdaderas y conclusión falsa?"
+    }
+   ],
+   "synthesis": "La forma «Todo A es B; c es B; luego c es A» es inválida: «Todos los gatos son mortales; Fido es mortal; luego Fido es gato.» Validez ≠ verdad. Prueba la forma con tablas de verdad en el Laboratorio de Lógica.",
+   "related": [
+    "aristotelian_logic",
+    "fallacies",
+    "propositional_logic"
+   ]
+  },
+  {
+   "id": "popper_swans",
+   "node": "falsificationism",
+   "level": 3,
+   "title": "El cisne negro",
+   "prompt": "¿Por qué observar mil cisnes blancos no demuestra que «todos los cisnes son blancos», pero un solo cisne negro sí lo refuta? ¿Qué implica esto para la ciencia?",
+   "steps": [
+    "Escribe la hipótesis en forma lógica (∀x).",
+    "Compara qué puede lograr la confirmación vs. la refutación.",
+    "Extrae la consecuencia para qué hace científica a una teoría."
+   ],
+   "concepts": [
+    {
+     "id": "induction",
+     "name": "Problema de la inducción",
+     "keywords": [
+      "induccion",
+      "no (prueba|demuestra|garantiza)",
+      "no basta",
+      "ninguna cantidad",
+      "siguiente cisne",
+      "hume",
+      "generaliz"
+     ],
+     "question": "Tras mil observaciones, ¿qué garantiza que la 1001ª también será blanca?",
+     "hints": [
+      "Pasar de casos observados a una ley universal es un salto lógico. ¿Qué garantiza ese salto?",
+      "Eso se llama problema de la inducción (Hume). Ninguna cantidad finita de casos cubre 'todos'.",
+      "Mil cisnes blancos son compatibles con que el cisne 1001 sea negro."
+     ]
+    },
+    {
+     "id": "asymmetry",
+     "name": "Asimetría verificar/refutar",
+     "keywords": [
+      "asimetr",
+      "un solo",
+      "un unico",
+      "basta (con )?uno",
+      "contraejemplo",
+      "refut",
+      "falsa"
+     ],
+     "question": "¿Por qué un solo caso en contra sí basta para tumbar la afirmación universal?",
+     "hints": [
+      "'Todos' es una afirmación muy fuerte. ¿Qué la contradice lógicamente?",
+      "La negación de «todos son blancos» es «existe al menos uno que no es blanco».",
+      "Un solo cisne negro es ese «existe»: la hipótesis es falsa con certeza lógica."
+     ]
+    },
+    {
+     "id": "falsifiable",
+     "name": "Falsabilidad como criterio",
+     "keywords": [
+      "falsabilidad",
+      "falsable",
+      "falsific",
+      "popper",
+      "refutable",
+      "demarcacion"
+     ],
+     "question": "Según esto, ¿qué debería cumplir una afirmación para considerarse científica?",
+     "hints": [
+      "Pregúntate: ¿qué observación posible la contradiría?",
+      "Una teoría que ninguna observación puede contradecir, ¿te dice algo sobre el mundo?",
+      "Ese criterio de demarcación lo propuso Karl Popper y se llama falsabilidad."
+     ]
+    },
+    {
+     "id": "provisional",
+     "name": "Conocimiento provisional",
+     "keywords": [
+      "provisional",
+      "temporal",
+      "tentativ",
+      "hipotesis",
+      "corroborad",
+      "mejor teoria",
+      "sin certeza",
+      "revisable"
+     ],
+     "question": "Si nunca podemos probar una ley universal, ¿qué estatus tienen las teorías que han sobrevivido muchos intentos de refutación?",
+     "hints": [
+      "Sobrevivir no es lo mismo que ser probada.",
+      "Popper las llama 'corroboradas', no 'verificadas'.",
+      "Piensa en Newton y Einstein: ¿qué le ocurrió a una teoría muy corroborada?"
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(mil|muchos|miles).*(cisnes|casos).*(demuestra|prueba|confirma)",
+     "response": "¿Cuántos casos hacen falta para pasar de 'algunos' a 'todos'? ¿Podría haber un caso no observado?"
+    }
+   ],
+   "synthesis": "Confirmaciones nunca prueban un universal (inducción); un contraejemplo lo refuta. Por eso Popper propone la falsabilidad como criterio y trata las teorías como hipótesis provisionales, corroboradas pero no verificadas.",
+   "related": [
+    "falsificationism",
+    "scientific_method",
+    "paradigm_shifts"
+   ]
+  },
+  {
+   "id": "xor_network",
+   "node": "neural_networks",
+   "level": 4,
+   "title": "El problema XOR",
+   "prompt": "¿Por qué un perceptrón de una sola neurona no puede aprender la función XOR, pero una red con una capa oculta sí?",
+   "steps": [
+    "Dibuja en el plano los 4 puntos (0,0), (0,1), (1,0), (1,1) coloreados según XOR.",
+    "¿Puedes separar los colores con una sola recta?",
+    "Imagina combinar dos rectas: ¿qué estructura de red lo permitiría?"
+   ],
+   "concepts": [
+    {
+     "id": "linear_sep",
+     "name": "Separabilidad lineal",
+     "keywords": [
+      "lineal",
+      "una (sola )?recta",
+      "una linea",
+      "hiperplano",
+      "separab",
+      "frontera de decision",
+      "linearly"
+     ],
+     "question": "Una sola neurona con umbral divide el plano con una recta. ¿Qué tipo de conjuntos de puntos puede separar?",
+     "hints": [
+      "La salida de un perceptrón es 1 de un lado de una recta y 0 del otro.",
+      "Ese tipo de conjunto se llama 'linealmente separable'.",
+      "¿Son separables por una recta los puntos de XOR? Dibújalos en la pizarra."
+     ]
+    },
+    {
+     "id": "xor_geometry",
+     "name": "Geometría de XOR",
+     "keywords": [
+      "diagonal",
+      "esquinas opuestas",
+      "(0,1).*(1,0)",
+      "(0,0).*(1,1)",
+      "no (existe|hay|se puede) (una )?(recta|linea)",
+      "no es linealmente"
+     ],
+     "question": "¿Cómo quedan dispuestos los puntos de salida 1 y los de salida 0 en el cuadrado? ¿Qué ocurre al intentar trazar una recta?",
+     "hints": [
+      "Marca con un color (0,1) y (1,0), con otro (0,0) y (1,1).",
+      "Los de igual color están en esquinas opuestas.",
+      "Cualquier recta que deje juntos a (0,1) y (1,0) deja a algún punto del otro color mezclado."
+     ]
+    },
+    {
+     "id": "hidden",
+     "name": "Capa oculta = combinar fronteras",
+     "keywords": [
+      "capa oculta",
+      "dos neuronas",
+      "hidden",
+      "varias rectas",
+      "combin",
+      "or y and",
+      "and.*or",
+      "composicion",
+      "dos capas"
+     ],
+     "question": "Si pudieras usar dos rectas y luego combinar sus resultados, ¿cómo separarías XOR? ¿Qué papel cumpliría cada neurona oculta?",
+     "hints": [
+      "XOR = (A OR B) AND NOT (A AND B). ¿Qué neuronas calculan cada parte?",
+      "Una neurona oculta puede calcular OR y otra AND; la de salida las combina.",
+      "Cada neurona oculta aporta una recta; la capa de salida combina las regiones."
+     ]
+    },
+    {
+     "id": "nonlinearity",
+     "name": "Necesidad de no linealidad",
+     "keywords": [
+      "no lineal",
+      "no linealidad",
+      "activacion",
+      "relu",
+      "sigmoid",
+      "sigmoide",
+      "tanh",
+      "nonlinear",
+      "colapsa",
+      "equivale a una"
+     ],
+     "question": "Si las neuronas ocultas solo hicieran sumas ponderadas SIN función de activación, ¿ganarías algo con apilar capas?",
+     "hints": [
+      "Una composición de funciones lineales, ¿es lineal o no?",
+      "Sin activación no lineal, dos capas se reducen matemáticamente a una sola transformación lineal.",
+      "Por eso la activación (ReLU, sigmoide...) es esencial. Prueba el perceptrón en el Laboratorio."
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(mas neuronas|muchas neuronas|mas datos|entrenar mas).*(sol|resuelv|basta)",
+     "response": "Más neuronas en la MISMA capa lineal, ¿añaden realmente capacidad para separar XOR? ¿Qué estructura de conexiones cambia el tipo de frontera?"
+    }
+   ],
+   "synthesis": "XOR no es linealmente separable: ninguna recta lo divide. Una capa oculta con activación no lineal combina varias fronteras (p. ej. OR y AND) y permite regiones no lineales. Sin no linealidad, apilar capas no añade poder expresivo.",
+   "related": [
+    "neural_networks",
+    "perceptron",
+    "linear_algebra"
+   ]
+  },
+  {
+   "id": "correlation_ice_cream",
+   "node": "critical_thinking",
+   "level": 2,
+   "title": "Helados y ahogamientos",
+   "prompt": "Los datos muestran que cuando aumentan las ventas de helado también aumentan los ahogamientos. ¿Significa que comer helado causa ahogamientos? ¿Cómo lo investigarías?",
+   "steps": [
+    "Enumera posibles explicaciones: A→B, B→A, tercera variable, azar.",
+    "Para cada una, ¿qué dato la apoyaría o refutaría?",
+    "Diseña una forma de distinguir causa de correlación."
+   ],
+   "concepts": [
+    {
+     "id": "confounder",
+     "name": "Variable de confusión",
+     "keywords": [
+      "calor",
+      "temperatura",
+      "verano",
+      "estacion",
+      "tercera variable",
+      "variable oculta",
+      "confusora",
+      "confounder",
+      "factor comun",
+      "causa comun"
+     ],
+     "question": "¿Existe algo que podría influir a la vez en las ventas de helado y en cuánta gente va a nadar?",
+     "hints": [
+      "Piensa en cuándo se vende más helado y cuándo hay más gente en el agua.",
+      "Una tercera variable que afecta a ambas se llama variable de confusión.",
+      "El calor/verano aumenta ambos fenómenos sin que uno cause al otro."
+     ]
+    },
+    {
+     "id": "direction",
+     "name": "Dirección de la causalidad",
+     "keywords": [
+      "al reves",
+      "inversa",
+      "reverse",
+      "direccion",
+      "b causa a",
+      "ahogamientos.*helado.*causa",
+      "causalidad inversa"
+     ],
+     "question": "Aun si hubiera relación causal, ¿podría ser en el sentido contrario? ¿Qué te dice el orden temporal de los eventos?",
+     "hints": [
+      "¿Qué pasaría si los ahogamientos provocaran más ventas de helado? ¿Es plausible?",
+      "Evalúa la plausibilidad de ambas direcciones.",
+      "El orden temporal y un mecanismo creíble ayudan a descartar causalidad inversa."
+     ]
+    },
+    {
+     "id": "mechanism",
+     "name": "Mecanismo y plausibilidad",
+     "keywords": [
+      "mecanismo",
+      "plausib",
+      "como (podria|puede) (causar|provocar)",
+      "por que (causaria|provocaria)",
+      "explicacion"
+     ],
+     "question": "¿Hay un mecanismo creíble por el cual comer helado haría que alguien se ahogue?",
+     "hints": [
+      "Describe paso a paso cómo A llevaría a B.",
+      "¿Algún paso te parece forzado o necesita suposiciones fuertes?",
+      "Un mecanismo plausible no basta, pero su ausencia es una señal de alerta."
+     ]
+    },
+    {
+     "id": "experiment",
+     "name": "Experimento o control",
+     "keywords": [
+      "experimento",
+      "aleatori",
+      "grupo (de )?control",
+      "controlar",
+      "ensayo",
+      "rct",
+      "ajustar",
+      "estratific",
+      "mantener constante",
+      "intervenir"
+     ],
+     "question": "¿Cómo diseñarías una comparación que separe el efecto del helado del efecto del calor?",
+     "hints": [
+      "Compara situaciones donde cambie el helado pero NO el calor.",
+      "Un experimento aleatorizado asigna el 'tratamiento' al azar, rompiendo las confusiones.",
+      "Si no puedes experimentar, controla estadísticamente por temperatura y compara solo días con la misma."
+     ]
+    }
+   ],
+   "misconceptions": [
+    {
+     "pattern": "(el helado|los helados) (causa|provoca|produce)",
+     "response": "¿Qué evidencia tienes más allá de que ambos suban juntos? ¿Qué otro factor podría explicar que ambos aumenten a la vez?"
+    }
+   ],
+   "synthesis": "La correlación puede deberse a una causa común (el calor), causalidad inversa o azar. Para inferir causalidad hacen falta mecanismo plausible, orden temporal, control de confusores o experimentos aleatorizados.",
+   "related": [
+    "critical_thinking",
+    "fallacies",
+    "scientific_method"
+   ]
+  }
+ ]
+}
