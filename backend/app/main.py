@@ -165,6 +165,20 @@ async def socratic_whiteboard(req: SocraticWhiteboard) -> dict:
             _enrich_session(res["session"])
             return res
 
+        _enrich_session(s)
+        problem = skills._PROBLEMS[s["problem_id"]]
+        missing = [c for c in problem["concepts"] if c["id"] not in s.get("mastered", [])]
+        return {
+            "newly": [],
+            "missing": len(missing),
+            "mastery": len(s.get("mastered", [])) / len(problem["concepts"]),
+            "kind": "feedback",
+            "transcription": "",
+            "message": "⚠️ Google Gemini experimentó una pausa temporal de demanda (error 503). Por favor, pulsa «👁️ Evaluar pizarra con IA» nuevamente.",
+            "session": s,
+            "engine": "retry",
+        }
+
     _enrich_session(s)
     problem = skills._PROBLEMS[s["problem_id"]]
     missing = [c for c in problem["concepts"] if c["id"] not in s.get("mastered", [])]

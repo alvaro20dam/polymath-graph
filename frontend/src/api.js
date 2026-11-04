@@ -116,7 +116,7 @@ export async function evaluateWhiteboard(session, imageBase64, history = []) {
 
   return {
     kind: 'feedback',
-    message: 'El análisis visual de la pizarra requiere conexión con el backend de IA activo.',
+    message: '⚠️ No se pudo conectar con el servidor para evaluar la pizarra. Asegúrate de que el backend esté activo e inténtalo de nuevo.',
     engine: 'local',
   };
 }

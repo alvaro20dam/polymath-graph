@@ -63,7 +63,7 @@ async def generate_gemini(
     primary_model = cfg["model"]
     # Modelos candidatos para máxima resiliencia
     models_to_try = [primary_model]
-    for alt in ["gemini-3.1-flash-lite", "gemini-3.5-flash"]:
+    for alt in ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"]:
         if alt not in models_to_try:
             models_to_try.append(alt)
 
@@ -463,7 +463,7 @@ async def extract_pdf_with_gemini(pdf_bytes: bytes) -> str | None:
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
     pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
-    models_to_try = ["gemini-3.1-flash-lite", "gemini-3.5-flash"]
+    models_to_try = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"]
     body = {
         "systemInstruction": {
             "parts": [{"text": "Eres un sistema de OCR de alta precisión para Polymath Graph. Transcribe fielmente todo el texto, fórmulas, títulos y párrafos presentes en este documento."}]
@@ -519,13 +519,20 @@ async def generate_gemini_multimodal(
         return None
 
     if "," in image_b64:
-        image_b64 = image_b64.split(",", 1)[1]
+        header, raw_b64 = image_b64.split(",", 1)
+        if "image/jpeg" in header or "image/jpg" in header:
+            mime_type = "image/jpeg"
+        elif "image/png" in header:
+            mime_type = "image/png"
+        elif "image/webp" in header:
+            mime_type = "image/webp"
+        image_b64 = raw_b64
 
-    models_to_try = [cfg["model"]]
-    if cfg["model"] != "gemini-3.1-flash-lite":
-        models_to_try.append("gemini-3.1-flash-lite")
-    if "gemini-3.5-flash" not in models_to_try:
-        models_to_try.append("gemini-3.5-flash")
+    primary_model = cfg["model"]
+    models_to_try = [primary_model]
+    for alt in ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
 
     body = {
         "systemInstruction": {
@@ -550,7 +557,7 @@ async def generate_gemini_multimodal(
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=25.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         for model_name in models_to_try:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"

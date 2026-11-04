@@ -287,15 +287,27 @@ export function mount(root) {
     const oldBtnText = evalBoardBtn.textContent;
     evalBoardBtn.textContent = '⏳ Examinando…';
 
-    // Generar captura con fondo oscuro idéntico a la pizarra (#0e1322)
+    // Generar captura optimizada con fondo oscuro idéntico a la pizarra (#0e1322)
+    const maxDim = 1000;
+    let w = canvas.width;
+    let h = canvas.height;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) {
+        h = Math.round((h * maxDim) / w);
+        w = maxDim;
+      } else {
+        w = Math.round((w * maxDim) / h);
+        h = maxDim;
+      }
+    }
     const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = canvas.width;
-    exportCanvas.height = canvas.height;
+    exportCanvas.width = Math.max(w, 200);
+    exportCanvas.height = Math.max(h, 150);
     const expCtx = exportCanvas.getContext('2d');
     expCtx.fillStyle = '#0e1322';
     expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    expCtx.drawImage(canvas, 0, 0);
-    const dataUrl = exportCanvas.toDataURL('image/png');
+    expCtx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+    const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.88);
 
     push('me', '🎨 *[Envié mi pizarra para revisión con IA]*');
 
