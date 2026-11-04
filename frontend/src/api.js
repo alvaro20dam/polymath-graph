@@ -2,6 +2,7 @@
 import { evaluate, hint, studyPlan } from './engines/socratic.js';
 import { answerFromDocument } from './engines/rag.js';
 import { explain } from './engines/explain.js';
+import { analyze } from './engines/fallacy.js';
 
 let _llmStatus = null;
 let _statusPromise = null;
@@ -200,5 +201,29 @@ export async function explainDocumentText(selectedText, context, level = 'beginn
   return {
     ...local,
     engine: 'local',
+  };
+}
+
+export async function auditFallacies(text, useLlm = true) {
+  try {
+    const res = await fetch('/api/fallacies/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        use_llm: useLlm,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  const local = analyze(text);
+  return {
+    ...local,
+    engine: 'heuristic',
   };
 }

@@ -1,9 +1,19 @@
+from unittest.mock import AsyncMock, patch
+
 from fastapi.testclient import TestClient
+import pytest
 
 from app import skills
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def disable_llm_for_api_tests(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+
 
 
 def ids(items):
@@ -131,3 +141,31 @@ def test_socratic_whiteboard_endpoint():
 def test_skills_registradas():
     for name in ["graph_node_builder", "semantic_link_evaluator", "citation_network_mapper", "socratic_hint_generator", "mastery_gap_analyzer", "adaptive_complexity_scaler", "explainpaper_highlighter", "fallacy_checker", "bias_detector", "argument_structure_parser", "vector_search_indexer"]:
         assert name in skills.SKILLS
+
+
+def test_fallacies_check_endpoint_llm_and_fallback():
+    # Modo fallback explícito (sin LLM)
+    sample_text = "Solo hay dos opciones: o apoyas la reforma o eres enemigo del país."
+    r_local = client.post("/api/fallacies/check", json={"text": sample_text, "use_llm": False}).json()
+    assert "false_dilemma" in ids(r_local["fallacies"])
+    assert r_local["engine"] == "heuristic"
+
+    # Modo con LLM mocked
+    mock_audit = {
+        "structure": {"premises": ["O estás conmigo o contra mí"], "conclusions": ["Eres enemigo"]},
+        "rigor": 15,
+        "fallacies": [{"name": "Falso dilema", "kind": "informal", "definition": "Solo dos opciones", "evidence": ["o estás conmigo"], "counter": "Hay posiciones intermedias"}],
+        "biases": [],
+        "notes": ["Dicotomía forzada"],
+        "steelmanning": "Existen múltiples posturas constructivas intermedias.",
+        "advice": "Permitir matices y diálogo.",
+        "engine": "gemini (gemini-3.5-flash)",
+    }
+    with patch("app.llm.fallacy_audit_with_llm", new_callable=AsyncMock) as mock_fn, \
+         patch("app.llm.get_llm_config", return_value={"enabled": True, "model": "gemini-3.5-flash"}):
+        mock_fn.return_value = mock_audit
+        r_ai = client.post("/api/fallacies/check", json={"text": sample_text, "use_llm": True}).json()
+        assert r_ai["rigor"] == 15
+        assert "steelmanning" in r_ai
+        assert "gemini" in r_ai["engine"]
+

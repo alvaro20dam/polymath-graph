@@ -165,3 +165,68 @@ async def test_socratic_whiteboard_gemini_error_returns_none():
 
         res = await llm.socratic_whiteboard_with_llm(session, dummy_img, [])
         assert res is None
+
+
+@pytest.mark.anyio
+async def test_fallacy_audit_with_mocked_gemini():
+    mock_payload = {
+        "structure": {
+            "premises": ["Premisa A", "Premisa B"],
+            "conclusions": ["Conclusión C"]
+        },
+        "rigor": 20,
+        "fallacies": [
+            {
+                "name": "Ad Hominem",
+                "kind": "informal",
+                "definition": "Ataque directo al interlocutor",
+                "evidence": ["eres un ignorante"],
+                "counter": "Señalar la falta de pertinencia",
+                "explanation": "Descalifica a la persona en lugar del argumento"
+            }
+        ],
+        "biases": [],
+        "notes": ["Ataque descalificador"],
+        "steelmanning": "Reformulación constructiva del punto central",
+        "advice": "Debatir la proposición y no a la persona"
+    }
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_payload
+
+        res = await llm.fallacy_audit_with_llm("No le hagas caso porque es un ignorante.")
+        assert res is not None
+        assert res["rigor"] == 20
+        assert len(res["fallacies"]) == 1
+        assert res["fallacies"][0]["name"] == "Ad Hominem"
+        assert res["fallacies"][0]["explanation"] == "Descalifica a la persona en lugar del argumento"
+        assert "constructiva" in res["steelmanning"]
+        assert "Debatir" in res["advice"]
+        assert "gemini" in res["engine"]
+
+
+@pytest.mark.anyio
+async def test_fallacy_audit_gemini_error_returns_none():
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = None
+
+        res = await llm.fallacy_audit_with_llm("Un argumento cualquiera")
+        assert res is None
+
+
+def test_safe_json_loads_resilience():
+    # Markdown fence
+    raw_markdown = '```json\n{"rigor": 85, "steelmanning": "Versión sólida"}\n```'
+    parsed = llm._safe_json_loads(raw_markdown)
+    assert parsed == {"rigor": 85, "steelmanning": "Versión sólida"}
+
+    # Leading & trailing conversational text
+    raw_dirty = 'Aquí tienes el resultado JSON:\n{"rigor": 40}\nEspero te sirva.'
+    parsed2 = llm._safe_json_loads(raw_dirty)
+    assert parsed2 == {"rigor": 40}
+
+    # Invalid string returns None
+    assert llm._safe_json_loads("Esto no es JSON") is None
+

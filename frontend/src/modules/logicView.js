@@ -3,6 +3,7 @@ import { el, nodeChip, navigate, progress, bus } from '../state.js';
 import { analyze, FALLACIES, BIASES } from '../engines/fallacy.js';
 import { truthTable, classify, checkValidity, EXAMPLES } from '../engines/logic.js';
 import { escapeHtml } from '../engines/text.js';
+import { auditFallacies, getLlmStatus } from '../api.js';
 
 const ARGUMENT_EXAMPLES = [
   ['Causa falsa', 'Después de que instalaron la nueva cámara, aumentaron los robos, por eso la cámara provoca los robos.'],
@@ -18,9 +19,25 @@ export function mount(root) {
   let sub = 'verify';
   const tabsEl = el('div', { class: 'tabs-sub' });
   const body = el('div');
+
+  const llmBadge = el('span', { class: 'llm-badge', style: 'margin-left:.6rem;vertical-align:middle' }, '⚡ Conectando…');
+  getLlmStatus().then((cfg) => {
+    if (cfg && cfg.enabled) {
+      llmBadge.textContent = `🤖 IA activa (${cfg.model})`;
+      llmBadge.classList.add('active');
+    } else {
+      llmBadge.textContent = '📐 Motor heurístico local';
+    }
+  }).catch(() => {
+    llmBadge.textContent = '📐 Motor heurístico local';
+  });
+
   root.append(el('div', { class: 'page' }, el('div', { class: 'page-inner' },
-    el('h1', { style: 'font-size:1.4rem' }, 'Motor de pensamiento crítico'),
-    el('p', { class: 'muted' }, '24 falacias lógicas y 24 sesgos cognitivos, con detección heurística y verificación formal de razonamientos.'), tabsEl, body)));
+    el('div', { style: 'display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem;flex-wrap:wrap' },
+      el('h1', { style: 'font-size:1.4rem;margin:0' }, 'Motor de pensamiento crítico'),
+      llmBadge
+    ),
+    el('p', { class: 'muted' }, 'Auditoría semántica con IA, 24 falacias lógicas, 24 sesgos cognitivos, reformulación constructiva (steel-manning) y laboratorio formal.'), tabsEl, body)));
 
   const panes = {};
   subs.forEach(([id, label]) => {
@@ -42,36 +59,92 @@ export function mount(root) {
   function verifier() {
     const out = el('div', { style: 'margin-top:1rem' });
     const ta = el('textarea', { placeholder: 'Pega un argumento, un tuit o un párrafo de opinión…', 'aria-label': 'Argumento a analizar', style: 'min-height:120px' });
+    const runBtn = el('button', { class: 'btn primary', onclick: run }, 'Analizar razonamiento');
     const wrap = el('div', {},
       el('div', { class: 'row', style: 'margin-bottom:.5rem' }, el('span', { class: 'muted' }, 'Ejemplos:'),
         ...ARGUMENT_EXAMPLES.map(([n, t]) => el('button', { class: 'btn small', onclick: () => { ta.value = t; run(); } }, n))),
-      ta, el('div', { class: 'row', style: 'margin-top:.5rem' }, el('button', { class: 'btn primary', onclick: run }, 'Analizar razonamiento'), el('span', { class: 'muted', style: 'font-size:.8rem' }, 'Detección heurística por patrones: úsala como guía, no como veredicto.')), out);
+      ta, el('div', { class: 'row', style: 'margin-top:.5rem' }, runBtn, el('span', { class: 'muted', style: 'font-size:.8rem' }, 'Detección semántica con IA y análisis heurístico de respaldo.')), out);
 
-    function run() {
+    async function run() {
       const text = ta.value.trim();
       out.innerHTML = '';
       if (!text) { out.append(el('p', { class: 'muted' }, 'Escribe o elige un ejemplo.')); return; }
-      const r = analyze(text);
+
+      runBtn.disabled = true;
+      const originalBtnText = runBtn.textContent;
+      runBtn.textContent = '⏳ Auditando con IA…';
+      out.append(el('div', { class: 'card', style: 'text-align:center;padding:1.8rem;margin-top:1rem' },
+        el('div', { style: 'font-size:1.8rem;margin-bottom:.5rem' }, '🧠'),
+        el('p', { style: 'font-weight:600;margin-bottom:.3rem' }, 'Auditando razonamiento con IA…'),
+        el('p', { class: 'muted', style: 'font-size:.85rem' }, 'Examinando premisas, deducciones lógicas, posibles falacias informales y generando versión constructiva (steel-manning).')
+      ));
+
+      let r;
+      try {
+        r = await auditFallacies(text);
+      } catch (err) {
+        r = { ...analyze(text), engine: 'heuristic' };
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = originalBtnText;
+      }
+
+      out.innerHTML = '';
+
+      const isAi = r.engine && r.engine.includes('gemini');
+      const engineTag = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem' },
+        el('span', { class: 'pill', style: isAi ? '--c:var(--good)' : '--c:var(--muted)' }, isAi ? `🤖 ${r.engine}` : '📐 Motor heurístico local'),
+        el('span', { class: 'muted', style: 'font-size:.8rem' }, isAi ? 'Evaluación semántica de fondo y deducción' : 'Análisis por reglas y expresiones regulares')
+      );
+      out.append(engineTag);
+
       const col = r.rigor > 79 ? 'var(--good)' : r.rigor > 50 ? 'var(--warn)' : 'var(--bad)';
+      const premises = r.structure?.premises || [];
+      const conclusions = r.structure?.conclusions || [];
+
       out.append(el('div', { class: 'two-col' },
         el('div', { class: 'card' }, el('h3', {}, 'Estructura del argumento'),
-          r.structure.premises.length ? el('ol', {}, ...r.structure.premises.map((p) => el('li', {}, p))) : el('p', { class: 'muted' }, 'Sin premisas identificadas.'),
-          el('p', {}, el('b', {}, '∴ Conclusión: '), r.structure.conclusions.join(' / ') || '—', r.structure.inferred ? el('small', { class: 'muted' }, ' (inferida: última frase)') : null)),
-        el('div', { class: 'card' }, el('h3', {}, 'Rigor estimado'), el('div', { class: 'big-number', style: `color:${col}` }, r.rigor + '/100'),
-          el('div', { class: 'meter' }, el('i', { style: `width:${r.rigor}%` })), ...r.notes.map((n) => el('p', { class: 'muted' }, n)))));
+          premises.length ? el('ol', { style: 'padding-left:1.2rem;margin:.4rem 0' }, ...premises.map((p) => el('li', {}, p))) : el('p', { class: 'muted' }, 'Sin premisas formales identificadas.'),
+          el('p', { style: 'margin-top:.6rem' }, el('b', {}, '∴ Conclusión: '), conclusions.join(' / ') || '—', r.structure?.inferred ? el('small', { class: 'muted' }, ' (inferida)') : null)),
+        el('div', { class: 'card' }, el('h3', {}, 'Rigor lógico estimado'), el('div', { class: 'big-number', style: `color:${col}` }, r.rigor + '/100'),
+          el('div', { class: 'meter' }, el('i', { style: `width:${Math.max(0, Math.min(100, r.rigor))}%` })),
+          ...(r.notes || []).map((n) => el('p', { class: 'muted', style: 'margin-top:.4rem;font-size:.88rem' }, n)))));
+
+      // Tarjeta destacada de Steel-manning (Reformulación Constructiva)
+      if (r.steelmanning) {
+        out.append(el('div', { class: 'card', style: 'border-left:4px solid var(--accent);background:color-mix(in srgb, var(--accent) 8%, var(--bg2));margin-top:1rem' },
+          el('h3', { style: 'color:var(--accent);display:flex;align-items:center;gap:.4rem' }, '🌟 Reformulación Constructiva (Steel-manning)'),
+          el('p', { style: 'font-size:.95rem;line-height:1.55;color:var(--text)' }, r.steelmanning),
+          r.advice ? el('div', { class: 'callout good', style: 'margin-top:.8rem' }, el('b', {}, '💡 Consejo Pedagógico: '), r.advice) : null
+        ));
+      } else if (r.advice) {
+        out.append(el('div', { class: 'callout good', style: 'margin-top:1rem' }, el('b', {}, '💡 Consejo Pedagógico: '), r.advice));
+      }
+
       const card = (f, kind) => {
-        const ev = f.evidence.map((e) => `<span class="ev">${escapeHtml(e)}</span>`).join(' … ');
+        const evList = (Array.isArray(f.evidence) ? f.evidence : [f.evidence]).filter(Boolean);
+        const ev = evList.map((e) => `<span class="ev">${escapeHtml(e)}</span>`).join(' … ');
         const c = el('div', { class: 'card fallacy-card' + (kind === 'bias' ? ' bias' : '') },
           el('h3', {}, f.name, el('span', { class: 'muted', style: 'font-weight:400;font-size:.8rem' }, kind === 'bias' ? ' · sesgo cognitivo' : ` · falacia ${f.kind === 'formal' ? 'formal' : 'informal'}`)),
-          el('p', {}, f.definition), el('p', { class: 'muted', html: 'Detectado en: ' + ev }),
-          el('div', { class: 'callout' }, el('b', {}, kind === 'bias' ? 'Antídoto: ' : 'Cómo refutarla: '), kind === 'bias' ? f.antidote : f.counter),
-          el('p', { class: 'muted', style: 'font-size:.85rem' }, 'Ejemplo: ' + f.example));
+          f.definition ? el('p', {}, f.definition) : null,
+          ev ? el('p', { class: 'muted', html: 'Detectado en: ' + ev }) : null,
+          f.explanation ? el('p', { style: 'font-size:.9rem;color:var(--text);margin-top:.4rem' }, el('b', {}, 'Análisis contextual: '), f.explanation) : null,
+          (kind === 'bias' ? f.antidote : f.counter) ? el('div', { class: 'callout' }, el('b', {}, kind === 'bias' ? 'Antídoto: ' : 'Cómo refutarla: '), kind === 'bias' ? f.antidote : f.counter) : null,
+          f.example ? el('p', { class: 'muted', style: 'font-size:.85rem' }, 'Ejemplo: ' + f.example) : null);
         if (f.id === 'affirming_consequent') c.append(el('button', { class: 'btn small', onclick: () => open('formal', { premises: ['P -> Q', 'Q'], conclusion: 'P' }) }, '⊢ Probar contraejemplo en tabla de verdad'));
         if (f.id === 'denying_antecedent') c.append(el('button', { class: 'btn small', onclick: () => open('formal', { premises: ['P -> Q', '!P'], conclusion: '!Q' }) }, '⊢ Probar contraejemplo en tabla de verdad'));
         return c;
       };
-      if (r.fallacies.length) out.append(el('h2', { style: 'margin-top:1rem' }, `Falacias detectadas (${r.fallacies.length})`), ...r.fallacies.map((f) => card(f, 'fallacy')));
-      if (r.biases.length) out.append(el('h2', { style: 'margin-top:1rem' }, `Sesgos cognitivos (${r.biases.length})`), ...r.biases.map((b) => card(b, 'bias')));
+
+      const hasFallacies = r.fallacies && r.fallacies.length > 0;
+      const hasBiases = r.biases && r.biases.length > 0;
+
+      if (hasFallacies) out.append(el('h2', { style: 'margin-top:1rem' }, `Falacias detectadas (${r.fallacies.length})`), ...r.fallacies.map((f) => card(f, 'fallacy')));
+      if (hasBiases) out.append(el('h2', { style: 'margin-top:1rem' }, `Sesgos cognitivos (${r.biases.length})`), ...r.biases.map((b) => card(b, 'bias')));
+      if (!hasFallacies && !hasBiases) {
+        out.append(el('div', { class: 'callout good', style: 'margin-top:1rem' }, '✅ No se detectaron falacias evidentes en este argumento. Las premisas y su conclusión presentan coherencia.'));
+      }
+
       out.append(el('div', { style: 'margin-top:.8rem' }, el('h4', {}, 'Conceptos relacionados'), nodeChip('fallacies'), nodeChip('cognitive_biases'), nodeChip('critical_thinking')));
     }
     return wrap;

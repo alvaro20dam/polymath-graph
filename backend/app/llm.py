@@ -41,6 +41,35 @@ def get_llm_config() -> dict[str, Any]:
     }
 
 
+def _safe_json_loads(raw: str) -> dict | list | None:
+    """Extrae y parsea JSON de forma segura y tolerante a markdown fences o texto marginal."""
+    if not raw or not isinstance(raw, str):
+        return None
+    s = raw.strip()
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    clean = s.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    try:
+        return json.loads(clean)
+    except json.JSONDecodeError:
+        pass
+    start = clean.find("{")
+    end = clean.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        cand = clean[start : end + 1]
+        try:
+            return json.loads(cand)
+        except json.JSONDecodeError:
+            try:
+                fixed = re.sub(r"(?<!\\)\n", r"\\n", cand)
+                return json.loads(fixed)
+            except Exception:
+                pass
+    return None
+
+
 async def generate_gemini(
     system_prompt: str,
     user_prompt: str,
@@ -90,7 +119,7 @@ async def generate_gemini(
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=25.0) as client:
         for model_name in models_to_try:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
@@ -105,11 +134,10 @@ async def generate_gemini(
                     if not text:
                         continue
                     if json_mode:
-                        try:
-                            return json.loads(text)
-                        except json.JSONDecodeError:
-                            clean = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-                            return json.loads(clean)
+                        parsed = _safe_json_loads(text)
+                        if parsed is not None:
+                            return parsed
+                        continue
                     return text
                 else:
                     logger.warning("Gemini API %s HTTP %d: %s", model_name, resp.status_code, resp.text[:150])
@@ -571,11 +599,10 @@ async def generate_gemini_multimodal(
                     if not text:
                         continue
                     if json_mode:
-                        try:
-                            return json.loads(text)
-                        except json.JSONDecodeError:
-                            clean = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-                            return json.loads(clean)
+                        parsed = _safe_json_loads(text)
+                        if parsed is not None:
+                            return parsed
+                        continue
                     return text
                 else:
                     logger.warning("Gemini Multimodal API %s HTTP %d: %s", model_name, resp.status_code, resp.text[:150])
@@ -708,3 +735,76 @@ Analiza la imagen de la pizarra adjunta del estudiante y genera la evaluación s
         "session": session,
         "engine": f"gemini ({cfg['model']})",
     }
+
+
+async def fallacy_audit_with_llm(text: str) -> dict | None:
+    """Audita semánticamente un argumento o discurso identificando falacias, sesgos y reformulación válida."""
+    snippet = text.strip()
+    if not snippet:
+        return None
+
+    system_prompt = """Eres el Auditor Lógico y de Pensamiento Crítico de Polymath Graph.
+Tu tarea es auditar rigurosamente el texto o argumento proporcionado por el usuario, analizando su estructura lógica, detectando falacias formales e informales, identificando sesgos cognitivos y proponiendo una reformulación constructiva (steel-manning).
+
+DIRECTRICES DE AUDITORÍA:
+1. No te dejes engañar por la elocuencia ni palabras clave: evalúa la deducción e inferencia causal y deductiva real entre premisas y conclusiones.
+2. Identifica si hay falacias informales (ad hominem, hombre de paja, falsa causa, falso dilema, pendiente resbaladiza, apelación a la ignorancia/autoridad/emoción, petición de principio, arenque rojo, etc.) o sesgos (confirmación, anclaje, costo hundido, exceso de confianza, retrospectiva, etc.).
+3. Evalúa el rigor en una escala de 0 a 100:
+   - 80-100: Argumento sólido, premisas plausibles, conclusión bien derivada.
+   - 50-79: Premisas aceptables pero con saltos lógicos o matices no fundamentados.
+   - 0-49: Razonamiento falaz, ataque personal o desconexión entre premisas y conclusión.
+4. "steelmanning": Proporciona una versión honesta, sólida y lógicamente válida de lo que el autor intenta argumentar, eliminando las falacias y aclarando las premisas.
+5. "advice": Consejo pedagógico conciso (1 o 2 oraciones) para fortalecer este razonamiento.
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{
+  "structure": {
+    "premises": ["Premisa 1", "Premisa 2"],
+    "conclusions": ["Conclusión defendida"]
+  },
+  "rigor": 65,
+  "fallacies": [
+    {
+      "name": "Nombre de la falacia",
+      "kind": "informal",
+      "definition": "Breve definición teórica de la falacia",
+      "evidence": ["Frase exacta del texto donde ocurre"],
+      "counter": "Cómo refutarla o señalar la debilidad",
+      "explanation": "Por qué este fragmento específico es falaz en este contexto"
+    }
+  ],
+  "biases": [
+    {
+      "name": "Nombre del sesgo cognitivo",
+      "definition": "Breve definición del sesgo",
+      "evidence": ["Frase del texto donde se manifiesta"],
+      "antidote": "Antídoto cognitivo para neutralizarlo"
+    }
+  ],
+  "notes": ["Observación crítica 1", "Observación crítica 2"],
+  "steelmanning": "Reformulación constructiva del argumento sin falacias",
+  "advice": "Consejo pedagógico final para el autor"
+}
+"""
+
+    user_prompt = f"""Argumento o texto a auditar:
+\"\"\"{snippet[:15000]}\"\"\"
+"""
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.2)
+    if not isinstance(result, dict) or "rigor" not in result:
+        return None
+
+    cfg = get_llm_config()
+    result["engine"] = f"gemini ({cfg['model']})"
+    if "structure" not in result or not isinstance(result["structure"], dict):
+        from . import skills
+        result["structure"] = skills.argument_structure_parser(snippet)
+    if "fallacies" not in result:
+        result["fallacies"] = []
+    if "biases" not in result:
+        result["biases"] = []
+    if "notes" not in result:
+        result["notes"] = []
+
+    return result

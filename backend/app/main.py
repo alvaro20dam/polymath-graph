@@ -89,8 +89,14 @@ def search(q: str = Query(min_length=2), k: int = Query(5, ge=1, le=20)) -> dict
 
 # ---------------- Lógica ----------------
 @app.post(f"{api}/fallacies/check")
-def check(req: FallacyRequest) -> dict:
-    return skills.fallacy_checker(req.text)
+async def check(req: FallacyRequest) -> dict:
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.fallacy_audit_with_llm(req.text)
+        if res is not None:
+            return res
+    res = skills.fallacy_checker(req.text)
+    res["engine"] = "heuristic"
+    return res
 
 
 @app.get(f"{api}/fallacies/catalog")
