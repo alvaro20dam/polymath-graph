@@ -87,6 +87,40 @@ export async function askSocraticHint(session, history = []) {
   return { ...localRes, engine: 'local' };
 }
 
+export async function evaluateWhiteboard(session, imageBase64, history = []) {
+  try {
+    const res = await fetch('/api/socratic/whiteboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session: {
+          problemId: session.problemId,
+          level: session.level,
+          mastered: session.mastered,
+          hintsUsed: session.hintsUsed,
+          attempts: session.attempts,
+          misconceptions: session.misconceptions,
+        },
+        image_base64: imageBase64,
+        history: history.slice(-6).map((m) => ({ role: m.role || 'user', text: m.text || '' })),
+        use_llm: true,
+      }),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    // Backend no alcanzable; cae al fallback
+  }
+
+  return {
+    kind: 'feedback',
+    message: 'El análisis visual de la pizarra requiere conexión con el backend de IA activo.',
+    engine: 'local',
+  };
+}
+
 export async function extractDocumentText(file) {
   const name = (file.name || '').toLowerCase();
   if (name.endsWith('.pdf')) {

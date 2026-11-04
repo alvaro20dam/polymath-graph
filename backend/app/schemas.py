@@ -44,6 +44,13 @@ class SocraticSession(BaseModel):
     use_llm: bool = True
 
 
+class SocraticWhiteboard(BaseModel):
+    session: SessionModel
+    image_base64: str = Field(min_length=10, description="Imagen PNG o JPEG en base64 de la pizarra")
+    history: list[dict] = []
+    use_llm: bool = True
+
+
 class ExplainRequest(BaseModel):
     selected_text: str = Field(default="", max_length=5000)
     context: str = Field(default="", max_length=50000)

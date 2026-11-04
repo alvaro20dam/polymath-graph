@@ -111,6 +111,23 @@ def test_rag_documento():
     assert client.post("/api/rag/query", json={"text": text, "question": "zzzz qqqq"}).json()["found"] is False
 
 
+def test_socratic_whiteboard_endpoint():
+    s = client.post("/api/socratic/start", json={"problem_id": "bayes_test"}).json()["session"]
+    # Prueba del endpoint con imagen base64 dummy
+    dummy_img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    r = client.post("/api/socratic/whiteboard", json={"session": s, "image_base64": dummy_img, "use_llm": False})
+    assert r.status_code == 200
+    data = r.json()
+    assert "transcription" in data
+    assert "message" in data
+    assert data["engine"] == "local"
+
+    # Validación de problema inexistente (404)
+    bad_session = {**s, "problem_id": "non_existent_problem", "problemId": "non_existent_problem"}
+    r404 = client.post("/api/socratic/whiteboard", json={"session": bad_session, "image_base64": dummy_img})
+    assert r404.status_code == 404
+
+
 def test_skills_registradas():
     for name in ["graph_node_builder", "semantic_link_evaluator", "citation_network_mapper", "socratic_hint_generator", "mastery_gap_analyzer", "adaptive_complexity_scaler", "explainpaper_highlighter", "fallacy_checker", "bias_detector", "argument_structure_parser", "vector_search_indexer"]:
         assert name in skills.SKILLS

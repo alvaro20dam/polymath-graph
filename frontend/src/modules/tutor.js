@@ -1,7 +1,7 @@
 // SocraticTutor_Agent + pizarra interactiva
 import { el, nodeChip, navigate, progress, bus, graph } from '../state.js';
 import { PROBLEMS, getProblem, newSession, evaluate, hint, openingMessage, masteryGaps, studyPlan } from '../engines/socratic.js';
-import { evaluateSocratic, askSocraticHint, getLlmStatus } from '../api.js';
+import { evaluateSocratic, askSocraticHint, evaluateWhiteboard, getLlmStatus } from '../api.js';
 import { renderMarkdown } from '../engines/text.js';
 
 const COLORS = ['#e6e9f5', '#7c8cff', '#34d399', '#fbbf24', '#f87171'];
@@ -33,12 +33,13 @@ export function mount(root) {
     el('div', { class: 'board-wrap' }, canvas),
     el('div', { class: 'row', style: 'margin-top:.5rem' }, stepInput, el('button', { class: 'btn primary', onclick: () => addStep() }, 'Añadir paso')),
     stepsBox,
-    el('p', { class: 'muted', style: 'font-size:.78rem' }, 'La pizarra es tu borrador libre; el tutor evalúa los pasos que escribes y tus mensajes de chat.'));
+    el('p', { class: 'muted', style: 'font-size:.78rem' }, 'Dibuja esquemas, fórmulas o diagramas y pulsa «👁️ Evaluar pizarra con IA» para que el tutor examine tu dibujo.'));
 
   const chat = el('div', { class: 'chat', 'aria-live': 'polite' });
   const chatInput = el('textarea', { rows: '1', placeholder: 'Escribe tu respuesta… (Enter para enviar)', 'aria-label': 'Mensaje al tutor' });
   const sendBtn = el('button', { class: 'btn primary', onclick: () => sendChat() }, 'Enviar');
   const resetChatBtn = el('button', { class: 'btn small', style: 'margin-right:auto;', onclick: () => resetProblem(), title: 'Reiniciar este problema y conversación desde cero' }, '↺ Reiniciar chat');
+  const evalBoardChatBtn = el('button', { class: 'btn small', onclick: () => evalWhiteboard(), title: 'Evalúa el dibujo actual en la pizarra' }, '👁️ Pizarra');
   const hintBtn = el('button', { class: 'btn small', onclick: () => askHint() }, '💡 Pista');
   const planBtn = el('button', { class: 'btn small', onclick: () => showPlan() }, '📋 Plan');
 
@@ -49,7 +50,7 @@ export function mount(root) {
   chatInput.addEventListener('input', autoResize);
 
   const inputRow = el('div', { class: 'chat-box-row' }, chatInput, sendBtn);
-  const toolsRow = el('div', { class: 'chat-tools-row' }, resetChatBtn, hintBtn, planBtn);
+  const toolsRow = el('div', { class: 'chat-tools-row' }, resetChatBtn, evalBoardChatBtn, hintBtn, planBtn);
   const chatInputWrap = el('div', { class: 'chat-input-wrap' }, inputRow, toolsRow);
 
   const llmBadge = el('span', { class: 'llm-badge', title: 'Estado del motor de tutoría' }, '● Local');
@@ -143,9 +144,11 @@ export function mount(root) {
 
   COLORS.forEach((c) => toolbar.append(el('button', { class: 'swatch' + (c === tool.color ? ' active' : ''), style: `--c:${c}`, 'aria-label': 'Color ' + c, onclick: (e) => { tool.color = c; tool.eraser = false; syncTools(); } })));
   const eraserBtn = el('button', { class: 'btn small', onclick: () => { tool.eraser = !tool.eraser; syncTools(); } }, '🧽 Borrador');
+  const evalBoardBtn = el('button', { class: 'btn small primary', style: 'margin-left:auto;', onclick: () => evalWhiteboard(), title: 'Gemini analiza tus fórmulas, esquemas o diagramas dibujados' }, '👁️ Evaluar pizarra con IA');
   toolbar.append(eraserBtn,
     el('button', { class: 'btn small', onclick: () => { cur?.strokes.pop(); redraw(); } }, '↶ Deshacer'),
-    el('button', { class: 'btn small', onclick: () => { if (cur) { cur.strokes = []; redraw(); } } }, 'Limpiar'));
+    el('button', { class: 'btn small', onclick: () => { if (cur) { cur.strokes = []; redraw(); } } }, 'Limpiar'),
+    evalBoardBtn);
   function syncTools() {
     toolbar.querySelectorAll('.swatch').forEach((b, i) => b.classList.toggle('active', !tool.eraser && COLORS[i] === tool.color));
     eraserBtn.classList.toggle('primary', tool.eraser);
@@ -270,6 +273,64 @@ export function mount(root) {
       sendChat();
     }
   });
+
+  async function evalWhiteboard() {
+    if (!cur) return;
+    const activeStrokes = (cur.strokes || []).filter((s) => !s.eraser && s.pts && s.pts.length > 0);
+    if (!activeStrokes.length) {
+      push('tutor', '🎨 **Tu pizarra está vacía.** Dibuja un diagrama, árbol de probabilidad, fórmula o cálculo primero para que pueda examinarlo.');
+      return;
+    }
+
+    evalBoardBtn.disabled = true;
+    evalBoardChatBtn.disabled = true;
+    const oldBtnText = evalBoardBtn.textContent;
+    evalBoardBtn.textContent = '⏳ Examinando…';
+
+    // Generar captura con fondo oscuro idéntico a la pizarra (#0e1322)
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const expCtx = exportCanvas.getContext('2d');
+    expCtx.fillStyle = '#0e1322';
+    expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    expCtx.drawImage(canvas, 0, 0);
+    const dataUrl = exportCanvas.toDataURL('image/png');
+
+    push('me', '🎨 *[Envié mi pizarra para revisión con IA]*');
+
+    const thinking = el('div', { class: 'msg tutor thinking' }, 'Examinando tu dibujo con visión multimodal…');
+    chat.append(thinking);
+    scrollChat();
+
+    let res;
+    try {
+      res = await evaluateWhiteboard(cur.session, dataUrl, cur.messages);
+    } catch {
+      res = { message: 'No pude procesar la imagen de la pizarra en este momento. Inténtalo de nuevo o escribe tu razonamiento.' };
+    } finally {
+      thinking.remove();
+      evalBoardBtn.disabled = false;
+      evalBoardChatBtn.disabled = false;
+      evalBoardBtn.textContent = oldBtnText;
+    }
+
+    if (res?.session) {
+      if (Array.isArray(res.session.mastered)) cur.session.mastered = [...res.session.mastered];
+      if (typeof res.session.attempts === 'number') cur.session.attempts = res.session.attempts;
+      if (typeof res.session.misconceptions === 'number') cur.session.misconceptions = res.session.misconceptions;
+    }
+
+    let reply = res?.message || 'He revisado tu pizarra. ¿Cuál sería tu siguiente paso?';
+    if (res?.transcription) {
+      reply = `🔍 *Vi en tu pizarra:* ${res.transcription}\n\n${reply}`;
+    }
+
+    push('tutor', reply);
+    renderChips();
+    renderProgress();
+    persist();
+  }
 
   async function askHint() {
     if (!cur) return;

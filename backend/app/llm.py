@@ -498,3 +498,206 @@ async def extract_pdf_with_gemini(pdf_bytes: bytes) -> str | None:
                 logger.warning("Fallo OCR Gemini con %s: %s", m, e)
                 continue
     return None
+
+
+async def generate_gemini_multimodal(
+    system_prompt: str,
+    user_prompt: str,
+    image_b64: str,
+    mime_type: str = "image/png",
+    json_mode: bool = False,
+    max_tokens: int = 1000,
+    temperature: float = 0.2,
+) -> dict | str | None:
+    """Invoca la API de Gemini con entrada multimodal (imagen + texto)."""
+    cfg = get_llm_config()
+    if not cfg["enabled"]:
+        return None
+
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
+    if not api_key:
+        return None
+
+    if "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+
+    models_to_try = [cfg["model"]]
+    if cfg["model"] != "gemini-3.1-flash-lite":
+        models_to_try.append("gemini-3.1-flash-lite")
+    if "gemini-3.5-flash" not in models_to_try:
+        models_to_try.append("gemini-3.5-flash")
+
+    body = {
+        "systemInstruction": {
+            "parts": [{"text": system_prompt}]
+        },
+        "contents": [{
+            "parts": [
+                {"inlineData": {"mimeType": mime_type, "data": image_b64.strip()}},
+                {"text": user_prompt}
+            ]
+        }],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        }
+    }
+    if json_mode:
+        body["generationConfig"]["responseMimeType"] = "application/json"
+
+    headers = {
+        "x-goog-api-key": api_key,
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        for model_name in models_to_try:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+                resp = await client.post(url, json=body, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if not candidates:
+                        continue
+                    text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if not text:
+                        continue
+                    if json_mode:
+                        try:
+                            return json.loads(text)
+                        except json.JSONDecodeError:
+                            clean = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+                            return json.loads(clean)
+                    return text
+                else:
+                    logger.warning("Gemini Multimodal API %s HTTP %d: %s", model_name, resp.status_code, resp.text[:150])
+            except Exception as e:
+                logger.warning("Fallo multimodal al invocar %s: %s", model_name, e)
+                continue
+    return None
+
+
+async def socratic_whiteboard_with_llm(
+    session: dict,
+    image_b64: str,
+    history: list[dict] | None = None,
+) -> dict | None:
+    """Evalúa los diagramas, fórmulas y razonamientos dibujados en la pizarra con visión multimodal de Gemini."""
+    from . import skills
+
+    problem_id = session.get("problem_id") or session.get("problemId")
+    if not problem_id or problem_id not in skills._PROBLEMS:
+        return None
+
+    problem = skills._PROBLEMS[problem_id]
+    concepts = problem["concepts"]
+    mastered_set = set(session.get("mastered", []))
+    missing_concepts = [c for c in concepts if c["id"] not in mastered_set]
+
+    system_prompt = f"""Eres un Tutor Socrático de élite con visión multimodal para la plataforma científica Polymath Graph.
+Tu misión es EXAMINAR LA PIZARRA del estudiante (dibujos a mano alzada, árboles de probabilidad, diagramas de Venn, fórmulas matemáticas, fracciones, grafos y esquemas de razonamiento) y guiarlo mediante el método socrático.
+
+REGLAS PEDAGÓGICAS ABSOLUTAS:
+1. Describe brevemente lo que ves dibujado o escrito en la pizarra en el campo "transcription".
+2. Si el alumno ha trazado pasos correctos o cálculos acertados en su pizarra, reconócelo explícitamente y márcalos en "newly_mastered_ids".
+3. Si el alumno comete un error visual o numérico (por ejemplo: olvidó una rama, error de signos, confusión en numerador/denominador, cálculo incorrecto), señálale con tacto dónde mirar o hazle una pregunta reflexiva para que él mismo descubra el fallo.
+4. NUNCA des el resultado final ni la síntesis completa de forma directa.
+5. Tu respuesta socrática debe ser breve (2 a 4 oraciones), cálida, clara y terminar siempre con una pregunta orientadora sobre el siguiente paso.
+
+DEBES responder con un objeto JSON válido con esta estructura:
+{{
+  "transcription": "Resumen conciso de lo que ves dibujado o escrito en la pizarra (ej: Árbol de probabilidad con 100 enfermos y 9900 sanos)",
+  "newly_mastered_ids": ["lista de ids de conceptos dominados por el alumno en este dibujo"],
+  "is_misconception": false,
+  "is_complete": false,
+  "message": "Tu respuesta socrática comentando lo que observas en la pizarra y terminando en una pregunta orientadora"
+}}
+"""
+
+    concepts_desc = "\n".join(
+        f"- ID: {c['id']} | Nombre: {c['name']} | Enfoque: {c['question']}"
+        for c in concepts
+    )
+    misconceptions_desc = "\n".join(
+        f"- Patrón erróneo común: {m.get('pattern', '')} -> Respuesta sugerida: {m.get('response', '')}"
+        for m in problem.get("misconceptions", [])
+    )
+
+    history_str = ""
+    if history:
+        recent = history[-4:]
+        history_str = "\n".join(f"{h.get('role', 'msg')}: {h.get('text', '')}" for h in recent)
+
+    user_prompt = f"""PROBLEMA SOCRÁTICO ACTUAL:
+Título: {problem['title']}
+Enunciado: {problem['prompt']}
+Pasos pedagógicos sugeridos: {', '.join(problem['steps'])}
+Síntesis (revelar solo cuando esté 100% completo): {problem['synthesis']}
+
+TODOS LOS CONCEPTOS DEL PROBLEMA:
+{concepts_desc}
+
+CONCEPTOS YA DOMINADOS POR EL ALUMNO:
+{list(mastered_set) or 'Ninguno todavía'}
+
+CONCEPTOS PENDIENTES:
+{[c['id'] for c in missing_concepts]}
+
+PATRONES ERRÓNEOS COMUNES:
+{misconceptions_desc}
+
+HISTORIAL RECIENTE DE LA CONVERSACIÓN:
+{history_str or 'El alumno está comenzando o trabajando en la pizarra.'}
+
+Analiza la imagen de la pizarra adjunta del estudiante y genera la evaluación socrática en formato JSON.
+"""
+
+    result = await generate_gemini_multimodal(
+        system_prompt,
+        user_prompt,
+        image_b64,
+        mime_type="image/png",
+        json_mode=True,
+        temperature=0.2,
+    )
+
+    if not isinstance(result, dict) or "message" not in result:
+        return None
+
+    session["attempts"] += 1
+    if result.get("is_misconception"):
+        session["misconceptions"] += 1
+
+    valid_concept_ids = {c["id"] for c in concepts}
+    newly_ids = [
+        cid for cid in result.get("newly_mastered_ids", [])
+        if cid in valid_concept_ids and cid not in mastered_set
+    ]
+
+    for cid in newly_ids:
+        session["mastered"].append(cid)
+        mastered_set.add(cid)
+
+    remaining_missing = [c for c in concepts if c["id"] not in mastered_set]
+    mastery = len(mastered_set) / len(concepts)
+    is_complete = len(remaining_missing) == 0
+
+    cfg = get_llm_config()
+    msg = result.get("message", "").strip()
+    if is_complete and not msg:
+        msg = f"¡Excelente trabajo en la pizarra! Has construido todo el razonamiento tú mismo. Síntesis: {problem['synthesis']}"
+
+    kind = "complete" if is_complete else ("misconception" if result.get("is_misconception") else "progress")
+    newly_names = [c["name"] for c in concepts if c["id"] in newly_ids]
+
+    return {
+        "newly": newly_names,
+        "missing": len(remaining_missing),
+        "mastery": mastery,
+        "kind": kind,
+        "transcription": result.get("transcription", "").strip(),
+        "message": msg,
+        "session": session,
+        "engine": f"gemini ({cfg['model']})",
+    }

@@ -125,3 +125,43 @@ async def test_rag_query_with_mocked_gemini():
         assert res["found"] is True
         assert "normalmente" in res["answer"]
         assert len(res["passages"]) > 0
+
+
+@pytest.mark.anyio
+async def test_socratic_whiteboard_with_mocked_gemini():
+    session = skills.new_session("bayes_test", "intermediate")
+    mock_payload = {
+        "transcription": "Diagrama de árbol con 100 enfermos y 9900 sanos, rama de 90 positivos.",
+        "newly_mastered_ids": ["base_rate", "false_pos"],
+        "is_misconception": False,
+        "is_complete": False,
+        "message": "Veo en tu diagrama que has ramificado correctamente la prevalencia y los falsos positivos. ¿Cómo calcularías la probabilidad final?",
+    }
+    dummy_img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini_multimodal", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_payload
+
+        res = await llm.socratic_whiteboard_with_llm(session, dummy_img, [])
+        assert res is not None
+        assert "Tasa base (prior)" in res["newly"]
+        assert "Falsos positivos entre los sanos" in res["newly"]
+        assert "base_rate" in res["session"]["mastered"]
+        assert "false_pos" in res["session"]["mastered"]
+        assert res["kind"] == "progress"
+        assert "Diagrama de árbol" in res["transcription"]
+        assert "falsos positivos" in res["message"]
+
+
+@pytest.mark.anyio
+async def test_socratic_whiteboard_gemini_error_returns_none():
+    session = skills.new_session("bayes_test", "intermediate")
+    dummy_img = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini_multimodal", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = None
+
+        res = await llm.socratic_whiteboard_with_llm(session, dummy_img, [])
+        assert res is None

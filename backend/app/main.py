@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, llm, skills
-from .schemas import (ExplainRequest, FallacyRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart)
+from .schemas import (ExplainRequest, FallacyRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -153,6 +153,31 @@ async def socratic_hint(req: SocraticSession) -> dict:
     res["engine"] = "heuristic"
     _enrich_session(res["session"])
     return res
+
+
+@app.post(f"{api}/socratic/whiteboard")
+async def socratic_whiteboard(req: SocraticWhiteboard) -> dict:
+    s = req.session.model_dump()
+    _guard(s)
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.socratic_whiteboard_with_llm(s, req.image_base64, req.history)
+        if res is not None:
+            _enrich_session(res["session"])
+            return res
+
+    _enrich_session(s)
+    problem = skills._PROBLEMS[s["problem_id"]]
+    missing = [c for c in problem["concepts"] if c["id"] not in s.get("mastered", [])]
+    return {
+        "newly": [],
+        "missing": len(missing),
+        "mastery": len(s.get("mastered", [])) / len(problem["concepts"]),
+        "kind": "feedback",
+        "transcription": "Pizarra del estudiante (modo local sin visión)",
+        "message": "El reconocimiento visual de la pizarra requiere conexión con IA (Gemini Flash). Puedes escribir tus cálculos o pasos en el cuadro de texto inferior para que el tutor los evalúe.",
+        "session": s,
+        "engine": "local",
+    }
 
 
 @app.post(f"{api}/socratic/plan")
