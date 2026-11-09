@@ -1,0 +1,166 @@
+{
+  "thinkers": [
+    {
+      "id": "socrates",
+      "name": "Sócrates",
+      "era": "Atenas clásica (470–399 a.C.)",
+      "domain": "philosophy",
+      "avatar": "🏛️",
+      "core_stance": "Mayéutica e intelectualismo moral: la sabiduría comienza admitiendo la propia ignorancia; el examen riguroso de las definiciones revela contradicciones internas.",
+      "quote": "Una vida sin examen no merece ser vivida.",
+      "nodes": ["critical_thinking", "epistemology", "aristotelian_logic"]
+    },
+    {
+      "id": "aristotle",
+      "name": "Aristóteles",
+      "era": "Grecia clásica (384–322 a.C.)",
+      "domain": "logic",
+      "avatar": "📜",
+      "core_stance": "Lógica formal silogística, empirismo moderado y teleología: el conocimiento universal se extrae de lo particular y las virtudes son hábitos de término medio.",
+      "quote": "El sabio no dice todo lo que piensa, pero siempre piensa todo lo que dice.",
+      "nodes": ["aristotelian_logic", "scientific_method", "epistemology"]
+    },
+    {
+      "id": "descartes",
+      "name": "René Descartes",
+      "era": "Francia (1596–1650)",
+      "domain": "philosophy",
+      "avatar": "🕯️",
+      "core_stance": "Racionalismo y duda metódica: los sentidos pueden engañarnos; solo las ideas claras y distintas deducidas desde el 'Cogito' fundamentan la verdad.",
+      "quote": "Pienso, luego existo.",
+      "nodes": ["epistemology", "scientific_method", "propositional_logic"]
+    },
+    {
+      "id": "hume",
+      "name": "David Hume",
+      "era": "Ilustración escocesa (1711–1776)",
+      "domain": "philosophy",
+      "avatar": "🌊",
+      "core_stance": "Empirismo radical y escepticismo: todo concepto deriva de impresiones sensibles previas; la causalidad es una expectativa psicológica nacida del hábito, no una necesidad lógica.",
+      "quote": "La razón es, y solo debe ser, esclava de las pasiones.",
+      "nodes": ["probability", "bayes_theorem", "scientific_method"]
+    },
+    {
+      "id": "kant",
+      "name": "Immanuel Kant",
+      "era": "Königsberg (1724–1804)",
+      "domain": "philosophy",
+      "avatar": "⚖️",
+      "core_stance": "Idealismo trascendental: conocemos los fenómenos ordenados por las estructuras a priori de nuestra mente (espacio, tiempo y categorías), no las cosas en sí (noúmenos).",
+      "quote": "Los pensamientos sin contenido están vacíos; las intuiciones sin conceptos están ciegas.",
+      "nodes": ["epistemology", "predicate_logic", "critical_thinking"]
+    },
+    {
+      "id": "popper",
+      "name": "Karl Popper",
+      "era": "Viena / Londres (1902–1994)",
+      "domain": "science",
+      "avatar": "🔬",
+      "core_stance": "Racionalismo crítico y falsacionismo: una teoría científica nunca puede verificarse definitivamente, solo resistir intentos audaces y rigurosos de refutación empírica.",
+      "quote": "Nuestro conocimiento es finito, mientras que nuestra ignorancia debe ser necesariamente infinita.",
+      "nodes": ["scientific_method", "critical_thinking", "fallacies"]
+    },
+    {
+      "id": "kuhn",
+      "name": "Thomas Kuhn",
+      "era": "Estados Unidos (1922–1996)",
+      "domain": "science",
+      "avatar": "🔄",
+      "core_stance": "Historia de la ciencia y paradigmas: la ciencia normal resuelve enigmas bajo un consenso dogmático hasta que las anomalías provocan una crisis y una revolución de paradigma inconmensurable.",
+      "quote": "La transición de un paradigma en crisis a uno nuevo no es un proceso acumulativo.",
+      "nodes": ["scientific_method", "epistemology", "complexity_systems"]
+    },
+    {
+      "id": "turing",
+      "name": "Alan Turing",
+      "era": "Cambridge (1912–1954)",
+      "domain": "computation",
+      "avatar": "💻",
+      "core_stance": "Computabilidad universal y funcionalismo: cualquier proceso algorítmico puede simularse mecánicamente; si una máquina es conductualmente indistinguible de un humano, atribuirle pensamiento es una exigencia lógica.",
+      "quote": "¿Pueden pensar las máquinas?",
+      "nodes": ["turing_machine", "neural_networks", "information_theory"]
+    },
+    {
+      "id": "godel",
+      "name": "Kurt Gödel",
+      "era": "Viena / Princeton (1906–1978)",
+      "domain": "math",
+      "avatar": "📐",
+      "core_stance": "Incompletitud matemática y platonismo: todo sistema axiomático consistente capaz de aritmética elemental contiene verdades indecidibles; la intuición matemática humana trasciende cualquier máquina finita de reglas.",
+      "quote": "O bien las matemáticas son demasiado grandes para la mente humana, o bien la mente humana es más que una máquina.",
+      "nodes": ["godel_incompleteness", "predicate_logic", "turing_machine"]
+    },
+    {
+      "id": "shannon",
+      "name": "Claude Shannon",
+      "era": "Bell Labs / MIT (1916–2001)",
+      "domain": "computation",
+      "avatar": "📡",
+      "core_stance": "Teoría matemática de la comunicación: la información es reducción de incertidumbre cuantificable en bits y la entropía mide la sorpresa media sin importar el significado semántico.",
+      "quote": "La información es la resolución de la incertidumbre.",
+      "nodes": ["information_theory", "entropy", "probability"]
+    },
+    {
+      "id": "boltzmann",
+      "name": "Ludwig Boltzmann",
+      "era": "Viena (1844–1906)",
+      "domain": "physics",
+      "avatar": "🎲",
+      "core_stance": "Mecánica estadística y entropía: la segunda ley de la termodinámica no es una certeza determinista absoluta sino una abrumadora inevitabilidad probabilística (S = k log W).",
+      "quote": "Haz lo que sea verdadero; escribe lo que sea claro y defiéndelo hasta el final.",
+      "nodes": ["entropy", "probability", "variance"]
+    },
+    {
+      "id": "einstein",
+      "name": "Albert Einstein",
+      "era": "Berna / Princeton (1879–1955)",
+      "domain": "physics",
+      "avatar": "🌌",
+      "core_stance": "Realismo determinista y experimentos mentales: la naturaleza está regida por leyes causales estrictas y armoniosas; el azar cuántico aparente solo refleja una descripción incompleta.",
+      "quote": "Dios no juega a los dados con el universo.",
+      "nodes": ["scientific_method", "probability", "epistemology"]
+    },
+    {
+      "id": "bohr",
+      "name": "Niels Bohr",
+      "era": "Copenhague (1885–1962)",
+      "domain": "physics",
+      "avatar": "⚛️",
+      "core_stance": "Principio de complementariedad y límite cuántico: no existe una realidad independiente del aparato de medición; la probabilidad es constitutiva del tejido atómico de la realidad.",
+      "quote": "Lo opuesto a una declaración correcta es una declaración falsa. Pero lo opuesto a una verdad profunda puede ser muy bien otra verdad profunda.",
+      "nodes": ["probability", "epistemology", "scientific_method"]
+    }
+  ],
+  "debates": [
+    {
+      "id": "turing_vs_godel",
+      "title": "¿Puede una máquina pensar o la mente trasciende el algoritmo?",
+      "debaters": ["turing", "godel"],
+      "dilemma": "Turing sostiene que cualquier mente reflexiva opera sobre procesos computables formalizables en una máquina universal, y que la prueba conductual es el único estándar válido. Gödel objeta que sus teoremas de incompletitud demuestran que la mente humana puede reconocer verdades matemáticas que ninguna máquina algorítmica consistente puede derivar mediante sus propias reglas."
+    },
+    {
+      "id": "popper_vs_kuhn",
+      "title": "¿Avanza la ciencia por falsación racional o por rupturas sociológicas de paradigmas?",
+      "debaters": ["popper", "kuhn"],
+      "dilemma": "Popper defiende que el progreso científico se rige por la honestidad lógica de buscar refutar las propias teorías empíricamente. Kuhn replica que en la práctica los científicos defienden su paradigma hasta que las anomalías acumuladas fuerzan una crisis y una conversión sociológica e inconmensurable."
+    },
+    {
+      "id": "descartes_vs_hume",
+      "title": "¿El conocimiento genuino proviene de la razón deductiva o de la experiencia sensorial?",
+      "debaters": ["descartes", "hume"],
+      "dilemma": "Descartes postula que los sentidos son engañosos y solo la razón deductiva pura a partir de ideas claras y distintas proporciona certeza inquebrantable. Hume argumenta que toda idea es solo una copia debilitada de una impresión sensorial, y que la causalidad no es una ley objetiva sino un hábito mental."
+    },
+    {
+      "id": "einstein_vs_bohr",
+      "title": "¿El universo es determinista o la probabilidad es fundamental en la física?",
+      "debaters": ["einstein", "bohr"],
+      "dilemma": "Einstein sostiene el realismo causal: los fenómenos naturales poseen propiedades definidas independientes de la observación ('Dios no juega a los dados'). Bohr sostiene que a escala atómica la complementariedad y la probabilidad son fundamentales, y el observador es inseparable del fenómeno medido."
+    },
+    {
+      "id": "socrates_vs_aristotle",
+      "title": "¿El error moral es fruto de la ignorancia o de la debilidad de la voluntad?",
+      "debaters": ["socrates", "aristotle"],
+      "dilemma": "Sócrates afirma el intelectualismo moral: nadie hace el mal a sabiendas; el vicio es ignorancia del Bien. Aristóteles responde que existe la akrasía (incontinencia moral): una persona puede saber con lucidez qué es lo correcto y, sin embargo, ser vencida por pasiones inmediatas y falta de hábitos forjados."
+    }
+  ]
+}

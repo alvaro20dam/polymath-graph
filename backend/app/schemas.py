@@ -91,3 +91,13 @@ class FlashcardRequest(BaseModel):
     use_llm: bool = True
 
 
+class DebateTurnRequest(BaseModel):
+    thinker_id: str
+    opponent_id: str
+    topic: str
+    history: list[dict] = []
+    user_intervention: str | None = None
+    use_llm: bool = True
+
+
+

@@ -5,6 +5,7 @@ import { explain } from './engines/explain.js';
 import { analyze } from './engines/fallacy.js';
 import { localFlashcards } from './engines/cardgen.js';
 import { graph } from './state.js';
+import thinkersData from '@data/thinkers.json';
 
 let _llmStatus = null;
 let _statusPromise = null;
@@ -301,4 +302,63 @@ export async function generateFlashcards(text, { source = 'document', maxCards =
   }
   return { cards: localFlashcards(text, { maxCards, level, lang }), engine: 'local' };
 }
+
+export async function fetchDebateCatalog() {
+  try {
+    const res = await fetch('/api/debate/catalog');
+    if (res.ok) return await res.json();
+  } catch {
+    // fallback
+  }
+  return thinkersData;
+}
+
+export async function requestDebateTurn({ thinkerId, opponentId, topic, history = [], userIntervention = null, useLlm = true }) {
+  try {
+    const res = await fetch('/api/debate/turn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thinker_id: thinkerId,
+        opponent_id: opponentId,
+        topic,
+        history,
+        user_intervention: userIntervention,
+        use_llm: useLlm,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  // Fallback local heurístico en cliente
+  const thinkers = thinkersData.thinkers;
+  const t = thinkers.find((x) => x.id === thinkerId) || { name: thinkerId, avatar: '🏛️', core_stance: 'Análisis racional.' };
+  const op = thinkers.find((x) => x.id === opponentId) || { name: opponentId, avatar: '📜' };
+
+  let text;
+  if (userIntervention) {
+    text = `Agradezco la agudeza de tu intervención. Mi postura sostiene que ${t.core_stance} Al plantear «${userIntervention.trim()}», debemos tener presente que mi estimado colega ${op.name} pasa por alto este fundamento epistémico.`;
+  } else if (!history.length) {
+    text = `Para abordar «${topic}», mi tesis central es ineludible: ${t.core_stance} Escuchemos qué objeción preliminar tiene mi distinguido interlocutor, ${op.name}.`;
+  } else {
+    text = `Comprendo el punto de ${op.name}, pero soslaya el núcleo de la cuestión. Con respecto a «${topic}», reitero que: ${t.core_stance}`;
+  }
+
+  const analysis = analyze(text);
+  return {
+    speaker: thinkerId,
+    name: t.name,
+    avatar: t.avatar,
+    text,
+    rigor: 85,
+    fallacies: analysis.fallacies || [],
+    key_concept: t.nodes?.[0] || 'critical_thinking',
+    engine: 'local',
+  };
+}
+
 

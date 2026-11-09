@@ -220,4 +220,45 @@ def test_flashcards_generate_endpoint():
         assert "entropía" in d_ai["cards"][0]["front"]
 
 
+def test_debate_catalog_and_turn_endpoints():
+    # 1. Catálogo de pensadores y debates
+    r_cat = client.get("/api/debate/catalog")
+    assert r_cat.status_code == 200
+    cat = r_cat.json()
+    assert "thinkers" in cat and len(cat["thinkers"]) >= 10
+    assert "debates" in cat and len(cat["debates"]) >= 5
+
+    # 2. Turno heurístico local
+    turn_req = {
+        "thinker_id": "turing",
+        "opponent_id": "godel",
+        "topic": "¿Puede una máquina pensar?",
+        "history": [],
+        "use_llm": False,
+    }
+    r_turn = client.post("/api/debate/turn", json=turn_req)
+    assert r_turn.status_code == 200
+    d_turn = r_turn.json()
+    assert d_turn["speaker"] == "turing"
+    assert "Turing" in d_turn["name"]
+    assert len(d_turn["text"]) >= 20
+    assert d_turn["engine"] == "heuristic"
+
+    # 3. Turno con intervención del usuario
+    turn_user = {
+        "thinker_id": "godel",
+        "opponent_id": "turing",
+        "topic": "¿Puede una máquina pensar?",
+        "history": [{"speaker": "turing", "text": "Una máquina universal computa cualquier función reflexiva."}],
+        "user_intervention": "¿Acaso el test de Turing no comete la falacia de petición de principio?",
+        "use_llm": False,
+    }
+    r_user = client.post("/api/debate/turn", json=turn_user)
+    assert r_user.status_code == 200
+    d_user = r_user.json()
+    assert d_user["speaker"] == "godel"
+    assert "petición de principio" in d_user["text"] or "agudeza" in d_user["text"]
+
+
+
 

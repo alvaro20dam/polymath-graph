@@ -1063,3 +1063,96 @@ Extrae hasta {max_cards} tarjetas de estudio atómicas en JSON:
     }
 
 
+async def debate_turn_with_llm(
+    thinker_id: str,
+    opponent_id: str,
+    topic: str,
+    history: list[dict] | None = None,
+    user_intervention: str | None = None,
+) -> dict | None:
+    """Emula a un pensador histórico en la Arena Dialéctica de Polymath Graph con Gemini Flash."""
+    from . import data
+
+    catalog = data.load("thinkers")
+    by_id = {t["id"]: t for t in catalog.get("thinkers", [])}
+    thinker = by_id.get(thinker_id, {"name": thinker_id.capitalize(), "era": "", "core_stance": "", "avatar": "🏛️"})
+    opponent = by_id.get(opponent_id, {"name": opponent_id.capitalize(), "era": "", "core_stance": "", "avatar": "📜"})
+
+    t_name = thinker["name"]
+    op_name = opponent["name"]
+
+    history_str = ""
+    if history:
+        turns = []
+        for h in history[-8:]:
+            spk = h.get("name") or h.get("speaker") or "Voz"
+            txt = h.get("text", "")
+            turns.append(f"{spk}: {txt}")
+        history_str = "\n\n".join(turns)
+
+    user_ctx = f"\nINTERVENCIÓN DEL ESTUDIANTE / MODERADOR:\n«{user_intervention.strip()}»\nDebes responder con agudeza y respeto pedagógico a este punto específico antes o durante tu réplica." if user_intervention else ""
+
+    system_prompt = f"""Eres {t_name} ({thinker.get('era', '')}), participando en la Arena Dialéctica de Polymath Graph.
+Estás en un debate socrático riguroso y apasionado contra {op_name} sobre el tema: «{topic}».
+
+TU PERFIL FILOSÓFICO Y CIENTÍFICO:
+- Postura central: {thinker.get('core_stance', '')}
+- Cita o principio rector: «{thinker.get('quote', '')}»
+- Tu estilo: Elocuente, riguroso, intelectualmente honesto y fiel a tu momento histórico y tus obras.
+
+REGLAS DE LA ARENA DIALÉCTICA:
+1. No utilices hombres de paja ni insultos: reconoce con justicia la fuerza del argumento de {op_name} antes de señalar su inconsistencia lógica, empírica o metafísica.
+2. Argumenta desde tu propio marco teórico (utiliza tus conceptos clave, paradojas o experimentos mentales célebres).
+3. Si el estudiante intervino, integra su aporte para enriquecer la mayéutica.
+4. Extensión: Entre 120 y 220 palabras (2 o 3 párrafos vibrantes). Concluye con una pregunta afilada o un desafío conceptual.
+5. Lenguaje: Español impecable, culto pero accesible y persuasivo.
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{{
+  "text": "Tu intervención en primera persona encarnando a {t_name}.",
+  "rigor": 92,
+  "key_concept": "Concepto central defendido (ej. incompletitud, falsacionismo, cogito)",
+  "fallacy_warning": null
+}}
+"""
+
+    user_prompt = f"""TEMA DEL DEBATE:
+«{topic}»
+
+POSTURA DE TU OPONENTE ({op_name}):
+{opponent.get('core_stance', '')}
+
+HISTORIAL RECIENTE DEL DEBATE:
+{history_str if history_str else '(Inicio del debate: presenta tu tesis inaugural y reta a ' + op_name + ')'}
+{user_ctx}
+
+Genera tu réplica en primera persona en JSON:
+"""
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.35, max_tokens=1000)
+    if not isinstance(result, dict) or not result.get("text"):
+        return None
+
+    text = str(result["text"]).strip()
+    try:
+        rigor = max(0, min(100, int(result.get("rigor", 85))))
+    except (ValueError, TypeError):
+        rigor = 85
+
+    from . import skills
+    audit = skills.fallacy_checker(text)
+
+    cfg = get_llm_config()
+    return {
+        "speaker": thinker_id,
+        "name": t_name,
+        "avatar": thinker.get("avatar", "🏛️"),
+        "text": text,
+        "rigor": rigor,
+        "fallacies": audit.get("fallacies", []),
+        "key_concept": str(result.get("key_concept", thinker.get("nodes", ["critical_thinking"])[0])),
+        "engine": f"gemini ({cfg['model']})",
+    }
+
+
+

@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, llm, skills
-from .schemas import (ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
+from .schemas import (DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -115,6 +115,24 @@ def catalog() -> dict:
     c = data.load("fallacies")
     strip = lambda items: [{k: v for k, v in i.items() if k != "patterns"} for i in items]
     return {"fallacies": strip(c["fallacies"]), "biases": strip(c["biases"])}
+
+
+# ---------------- Arena Dialéctica (Debate Socrático Cruzado) ----------------
+@app.get(f"{api}/debate/catalog")
+def debate_catalog() -> dict:
+    """Devuelve el catálogo de pensadores históricos y debates clásicos predefinidos."""
+    return data.load("thinkers")
+
+
+@app.post(f"{api}/debate/turn")
+async def debate_turn(req: DebateTurnRequest) -> dict:
+    """Genera la réplica dialéctica de un pensador histórico contra otro sobre un dilema."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.debate_turn_with_llm(req.thinker_id, req.opponent_id, req.topic, req.history, req.user_intervention)
+        if res is not None:
+            return res
+    return skills.debate_turn_heuristic(req.thinker_id, req.opponent_id, req.topic, req.history, req.user_intervention)
+
 
 
 # ---------------- Tutor socrático ----------------

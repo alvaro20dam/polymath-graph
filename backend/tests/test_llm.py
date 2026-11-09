@@ -286,4 +286,25 @@ async def test_generate_flashcards_with_mocked_gemini():
         assert res["cards"][0]["kind"] == "qa"
 
 
+@pytest.mark.anyio
+async def test_debate_turn_with_mocked_gemini():
+    mock_payload = {
+        "text": "Mi estimado Gödel, tu apelación a una intuición mística no computable es innecesaria. Toda operación demostrativa que un matemático ejecuta sobre el papel sigue pasos discretos.",
+        "rigor": 94,
+        "key_concept": "turing_machine",
+    }
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_payload
+
+        res = await llm.debate_turn_with_llm("turing", "godel", "¿Puede una máquina pensar?")
+        assert res is not None
+        assert res["speaker"] == "turing"
+        assert "Turing" in res["name"]
+        assert "intuición" in res["text"]
+        assert res["rigor"] == 94
+        assert "gemini" in res["engine"]
+
+
+
 

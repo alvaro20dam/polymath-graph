@@ -4,6 +4,7 @@ import { analyze, FALLACIES, BIASES } from '../engines/fallacy.js';
 import { truthTable, classify, checkValidity, EXAMPLES } from '../engines/logic.js';
 import { escapeHtml } from '../engines/text.js';
 import { auditFallacies, getLlmStatus } from '../api.js';
+import { createArena } from './debate.js';
 
 const ARGUMENT_EXAMPLES = [
   ['Causa falsa', 'Después de que instalaron la nueva cámara, aumentaron los robos, por eso la cámara provoca los robos.'],
@@ -15,8 +16,13 @@ const ARGUMENT_EXAMPLES = [
 ];
 
 export function mount(root) {
-  const subs = [['verify', '🔎 Verificador de argumentos'], ['cards', '🃏 Tarjetas y quiz'], ['formal', '⊢ Lógica formal']];
-  let sub = 'verify';
+  const subs = [
+    ['debate', '🏛️ Arena Dialéctica (Debate)'],
+    ['verify', '🔎 Verificador de argumentos'],
+    ['cards', '🃏 Tarjetas y quiz'],
+    ['formal', '⊢ Lógica formal'],
+  ];
+  let sub = 'debate';
   const tabsEl = el('div', { class: 'tabs-sub' });
   const body = el('div');
 
@@ -51,9 +57,12 @@ export function mount(root) {
     if (id === 'formal' && params.premises) panes.formal.load(params);
   }
 
-  panes.verify = verifier(); panes.cards = cards(); panes.formal = formal();
+  panes.debate = createArena();
+  panes.verify = verifier();
+  panes.cards = cards();
+  panes.formal = formal();
   Object.values(panes).forEach((p) => body.append(p));
-  open('verify');
+  open('debate');
 
   // ---------------- Verificador ----------------
   function verifier() {
@@ -277,5 +286,12 @@ export function mount(root) {
     return w;
   }
 
-  return { show(params = {}) { if (params.sub === 'formal') open('formal'); else if (params.sub === 'fallacy') open('verify'); } };
+  return {
+    show(params = {}) {
+      if (params.sub === 'formal') open('formal', params);
+      else if (params.sub === 'fallacy' || params.sub === 'verify') open('verify');
+      else if (params.sub === 'cards') open('cards');
+      else if (params.sub === 'debate') open('debate');
+    },
+  };
 }

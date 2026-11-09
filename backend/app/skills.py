@@ -582,3 +582,60 @@ def generate_flashcards(text: str, max_cards: int = 8, level: str = "intermediat
                             break
 
     return {"cards": cards[:max_cards], "engine": "heuristic"}
+
+
+@skill
+def debate_turn_heuristic(
+    thinker_id: str,
+    opponent_id: str,
+    topic: str,
+    history: list[dict] | None = None,
+    user_intervention: str | None = None,
+) -> dict:
+    """Genera una réplica dialéctica determinista cuando no hay conexión a IA."""
+    history = history or []
+    catalog = data.load("thinkers")
+    thinkers_by_id = {t["id"]: t for t in catalog["thinkers"]}
+    thinker = thinkers_by_id.get(thinker_id, {"name": thinker_id.capitalize(), "avatar": "🏛️", "core_stance": "Análisis racional."})
+    opponent = thinkers_by_id.get(opponent_id, {"name": opponent_id.capitalize(), "avatar": "📜", "core_stance": "Crítica dialéctica."})
+
+    t_name = thinker["name"]
+    op_name = opponent["name"]
+    stance = thinker.get("core_stance", "")
+
+    # Determinar si es apertura, réplica u objeción a intervención del usuario
+    if user_intervention:
+        text = (
+            f"Agradezco la agudeza de tu intervención. Precisamente mi postura sostiene que {stance} "
+            f"Al plantear «{user_intervention.strip()}», debemos recordar que el error estriba en no examinar "
+            f"los supuestos que damos por sentados. Mi estimado colega {op_name} soslaya esta distinción fundamental."
+        )
+    elif not history:
+        text = (
+            f"Para abordar «{topic}», debemos situar la cuestión en sus cimientos más sólidos. "
+            f"Mi tesis central es clara: {stance} "
+            f"Cualquier intento de evadir esta premisa nos conducirá a contradicciones irresolubles. "
+            f"Escuchemos qué objeción tiene mi distinguido interlocutor, {op_name}."
+        )
+    else:
+        last_turn = history[-1].get("text", "")
+        text = (
+            f"Comprendo la seducción del argumento de {op_name}, pero incurre en una petición de principio. "
+            f"Afirma que la cuestión se resuelve desde su perspectiva, cuando en verdad: {stance} "
+            f"Por consiguiente, respecto a «{topic}», sostengo que no podemos reducir el problema a lo que plantea {op_name} "
+            f"sin antes resolver el problema epistémico de fondo."
+        )
+
+    # Auditar con el motor de falacias para evaluar rigor
+    audit = fallacy_checker(text)
+    return {
+        "speaker": thinker_id,
+        "name": t_name,
+        "avatar": thinker.get("avatar", "🏛️"),
+        "text": text,
+        "rigor": 85,
+        "fallacies": audit.get("fallacies", []),
+        "key_concept": thinker.get("nodes", ["critical_thinking"])[0],
+        "engine": "heuristic",
+    }
+

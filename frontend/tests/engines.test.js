@@ -272,4 +272,24 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     expect(flashcards.has('Pregunta única A')).toBe(false);
     expect(flashcards.all()).toHaveLength(1);
   });
+
+  it('Arena Dialéctica: catálogo de pensadores y réplica dialéctica', async () => {
+    const thinkersData = (await import('@data/thinkers.json')).default;
+    expect(thinkersData.thinkers.length).toBeGreaterThanOrEqual(10);
+    expect(thinkersData.debates.length).toBeGreaterThanOrEqual(5);
+
+    const { requestDebateTurn } = await import('../src/api.js');
+    const turn = await requestDebateTurn({
+      thinkerId: 'turing',
+      opponentId: 'godel',
+      topic: '¿Pueden las máquinas pensar?',
+      history: [],
+      useLlm: false,
+    });
+    expect(turn.speaker).toBe('turing');
+    expect(turn.name).toContain('Turing');
+    expect(turn.text).toContain('Gödel');
+    expect(turn.text.length).toBeGreaterThan(20);
+    expect(turn.rigor).toBeGreaterThanOrEqual(70);
+  });
 });
