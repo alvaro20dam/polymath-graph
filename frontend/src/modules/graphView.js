@@ -1,6 +1,6 @@
 // FrontendUIX_Agent · skill: d3_graph_renderer
 import * as d3 from 'd3';
-import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus, removeCustomNode } from '../state.js';
+import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus, removeCustomNode, clearAllCustomNodes } from '../state.js';
 import { buildIndex, search } from '../engines/rag.js';
 import { PROBLEMS } from '../engines/socratic.js';
 import timelines from '@data/timelines.json';
@@ -91,13 +91,28 @@ export function mount(root) {
   const gNodes = zoomLayer.append('g');
   stage.append(tooltip);
 
+  const btnResetCustom = el('button', {
+    class: 'btn small',
+    style: 'border-color:var(--bad);color:var(--bad);display:none',
+    title: 'Restablecer el grafo y eliminar todos los nodos integrados desde documentos',
+    onclick: () => {
+      const count = graph.nodes.filter((n) => n.custom).length;
+      if (confirm(`¿Eliminar los ${count} nodo(s) integrados desde documentos y restaurar el grafo base?`)) {
+        clearAllCustomNodes();
+        clearSelection();
+        resetView();
+      }
+    },
+  }, '↺ Restaurar grafo base');
+
   const hud = el('div', { class: 'graph-hud' },
     el('button', { class: 'btn small only-mobile', onclick: () => left.classList.toggle('open') }, '☰ Filtros'),
     el('button', { class: 'btn small', onclick: () => rabbitHole() }, '🐇 Madriguera'),
     el('button', { class: 'btn small', onclick: () => resetView() }, '⤢ Reencuadrar'),
-    el('button', { class: 'btn small', onclick: () => { clearSelection(); } }, '✕ Limpiar'));
+    el('button', { class: 'btn small', title: 'Cerrar panel de detalle y deseleccionar nodo', onclick: () => { clearSelection(); } }, '✕ Deseleccionar'),
+    btnResetCustom);
   stage.append(hud);
-  stage.append(el('div', { class: 'legend', html: 'Tamaño = conexiones · <span style="color:#58628a">→</span> influencia · <span style="color:#f87171">- -</span> contraste · <span style="color:#34d399">◌</span> dominado en el Tutor' }));
+  stage.append(el('div', { class: 'legend', html: 'Tamaño = conexiones · <span style="color:#58628a">→</span> influencia · <span style="color:#f87171">- -</span> contraste · <span style="color:#34d399">◌</span> dominado · <span style="color:var(--accent2)">✦</span> tus documentos' }));
 
   // ------------ panel izquierdo ------------
   const searchInput = el('input', { type: 'search', placeholder: 'Buscar idea, autor o tema…', 'aria-label': 'Buscar' });
@@ -250,6 +265,11 @@ export function mount(root) {
     sim.force('link').links(vLinks);
     if (alpha > 0) sim.alpha(alpha).restart();
     else sim.alpha(0.001).restart();
+
+    const customCount = graph.nodes.filter((n) => n.custom).length;
+    btnResetCustom.style.display = customCount > 0 ? 'inline-flex' : 'none';
+    btnResetCustom.textContent = `↺ Restaurar grafo base (${customCount})`;
+
     applyClasses();
   }
 
@@ -286,6 +306,9 @@ export function mount(root) {
         countEl.textContent = nodes.filter((n) => n.domain === domId).length;
       }
     });
+    if (state.selected && !nodeById.has(state.selected)) {
+      clearSelection();
+    }
     render(0.55);
   });
 

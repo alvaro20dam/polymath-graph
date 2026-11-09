@@ -133,6 +133,35 @@ export function removeCustomNode(id) {
   return true;
 }
 
+export function clearAllCustomNodes() {
+  const customNodes = graph.nodes.filter((n) => n.custom);
+  if (!customNodes.length) return 0;
+  const customIds = new Set(customNodes.map((n) => n.id));
+
+  for (let i = graph.nodes.length - 1; i >= 0; i--) {
+    if (graph.nodes[i].custom) {
+      nodeById.delete(graph.nodes[i].id);
+      graph.nodes.splice(i, 1);
+    }
+  }
+
+  for (let i = graph.links.length - 1; i >= 0; i--) {
+    const l = graph.links[i];
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    if (customIds.has(s) || customIds.has(t)) {
+      graph.links.splice(i, 1);
+    }
+  }
+
+  try {
+    localStorage.removeItem(CUSTOM_GRAPH_KEY);
+  } catch { /* modo privado */ }
+
+  emit('graph-updated', { clearedAll: true, count: customIds.size });
+  return customIds.size;
+}
+
 export const progress = {
   get: () => data,
   recordProblem(problemId, node, session, total) {

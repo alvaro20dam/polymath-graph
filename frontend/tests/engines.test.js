@@ -156,3 +156,45 @@ describe('RAG TF-IDF y explicador', () => {
     expect(unsafe).toContain('&lt;script&gt;');
   });
 });
+
+describe('gestión del Grafo Vivo y limpieza de nodos', () => {
+  it('integra, elimina y restaura nodos personalizados', async () => {
+    const { integrateGraphNodes, removeCustomNode, clearAllCustomNodes, nodeById, graph: stateGraph } = await import('../src/state.js');
+    const initialCount = stateGraph.nodes.length;
+
+    // 1. Integrar un nodo nuevo
+    const testNode = {
+      id: 'test_node_custom',
+      label: 'Concepto de Prueba',
+      domain: 'science',
+      complexity: 3,
+      summary: 'Nodo para prueba unitaria',
+      authors: ['Autor Test'],
+    };
+    const testLink = { source: 'test_node_custom', target: 'bayes_theorem', relation: 'influences' };
+    integrateGraphNodes([testNode], [testLink]);
+
+    expect(nodeById.has('test_node_custom')).toBe(true);
+    expect(stateGraph.nodes.find((n) => n.id === 'test_node_custom')?.custom).toBe(true);
+
+    // 2. Eliminar nodo individual
+    const removed = removeCustomNode('test_node_custom');
+    expect(removed).toBe(true);
+    expect(nodeById.has('test_node_custom')).toBe(false);
+
+    // 3. Integrar múltiples y limpiar todos con clearAllCustomNodes
+    integrateGraphNodes([
+      { id: 'custom_1', label: 'C1', domain: 'math' },
+      { id: 'custom_2', label: 'C2', domain: 'physics' },
+    ], [{ source: 'custom_1', target: 'bayes_theorem', relation: 'influences' }]);
+
+    expect(nodeById.has('custom_1')).toBe(true);
+    expect(nodeById.has('custom_2')).toBe(true);
+
+    const cleared = clearAllCustomNodes();
+    expect(cleared).toBe(2);
+    expect(nodeById.has('custom_1')).toBe(false);
+    expect(nodeById.has('custom_2')).toBe(false);
+    expect(stateGraph.nodes.length).toBe(initialCount);
+  });
+});
