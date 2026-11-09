@@ -4,6 +4,7 @@ import { deckStats, SRS_CONFIG } from './engines/srs.js';
 
 const TABS = [
   { id: 'graph', label: 'Grafo', icon: '◉', load: () => import('./modules/graphView.js') },
+  { id: 'challenge', label: 'Desafío Polímata', icon: '🎯', load: () => import('./modules/challengeView.js') },
   { id: 'tutor', label: 'Tutor socrático', icon: '❓', load: () => import('./modules/tutor.js') },
   { id: 'explainer', label: 'Explicador', icon: '📖', load: () => import('./modules/explainer.js') },
   { id: 'lab', label: 'Laboratorio', icon: '🧪', load: () => import('./modules/lab.js') },

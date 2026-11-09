@@ -292,4 +292,52 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     expect(turn.text.length).toBeGreaterThan(20);
     expect(turn.rigor).toBeGreaterThanOrEqual(70);
   });
+
+  it('Desafío Polímata: Radar de Maestría, Niveles XP y Retos Interdisciplinarios', async () => {
+    const { progress } = await import('../src/state.js');
+    const { requestGenerateChallenge, requestEvaluateChallenge } = await import('../src/api.js');
+
+    // 1. Visitar nodo y calcular maestría
+    progress.visit('bayes_theorem');
+    progress.visit('scientific_method');
+    const mastery = progress.domainMastery();
+    expect(Object.keys(mastery)).toHaveLength(6);
+    expect(mastery.logic).toBeGreaterThan(0);
+    expect(mastery.science).toBeGreaterThan(0);
+
+    // 2. Perfil polímata inicial
+    const prof = progress.polymathProfile();
+    expect(prof).toHaveProperty('level');
+    expect(prof).toHaveProperty('xp');
+    expect(prof).toHaveProperty('title');
+    expect(prof.badges.length).toBeGreaterThanOrEqual(5);
+
+    // 3. Generación y resolución de desafío
+    const ch = await requestGenerateChallenge({ domain1: 'science', domain2: 'technology', useLlm: false });
+    expect(ch).toHaveProperty('question');
+    expect(ch.options).toHaveLength(4);
+
+    const initialXp = progress.xp();
+    const evalRes = await requestEvaluateChallenge({
+      challengeId: ch.id,
+      question: ch.question,
+      userAnswer: ch.options[ch.correct || 0],
+      userReasoning: 'Inferencia correcta sobre la relación interdisciplinaria.',
+      domains: ch.domains,
+      useLlm: false,
+    });
+    expect(evalRes.is_correct).toBe(true);
+
+    progress.recordChallenge(ch.id, {
+      solved: true,
+      xp: evalRes.xp,
+      domains: ch.domains,
+      score: evalRes.score,
+    });
+
+    expect(progress.xp()).toBe(initialXp + evalRes.xp);
+    const updatedProf = progress.polymathProfile();
+    expect(updatedProf.solvedChallenges).toBeGreaterThanOrEqual(1);
+    expect(updatedProf.badges.find((b) => b.id === 'bridge_builder')?.unlocked).toBe(true);
+  });
 });

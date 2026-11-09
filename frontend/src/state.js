@@ -53,9 +53,17 @@ if (_initialCustom.nodes?.length) {
 
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) ?? { problems: {}, quiz: { right: 0, total: 0 }, visited: [] };
+    const raw = JSON.parse(localStorage.getItem(KEY));
+    return {
+      problems: raw?.problems ?? {},
+      quiz: raw?.quiz ?? { right: 0, total: 0 },
+      visited: raw?.visited ?? [],
+      challenges: raw?.challenges ?? {},
+      xp: raw?.xp ?? 0,
+      badges: raw?.badges ?? [],
+    };
   } catch {
-    return { problems: {}, quiz: { right: 0, total: 0 }, visited: [] };
+    return { problems: {}, quiz: { right: 0, total: 0 }, visited: [], challenges: {}, xp: 0, badges: [] };
   }
 }
 let data = load();
@@ -185,7 +193,90 @@ export const progress = {
   visit(id) {
     if (!data.visited.includes(id)) { data.visited.push(id); save(); emit('progress'); }
   },
-  reset() { data = { problems: {}, quiz: { right: 0, total: 0 }, visited: [] }; save(); emit('progress'); },
+  recordChallenge(challengeId, { solved, xp = 0, domains = [], score = 0 } = {}) {
+    if (!data.challenges) data.challenges = {};
+    data.challenges[challengeId] = {
+      solved: Boolean(solved),
+      xp: Number(xp) || 0,
+      domains: Array.isArray(domains) ? domains : [],
+      score: Number(score) || 0,
+      date: Date.now(),
+    };
+    if (solved) {
+      data.xp = (data.xp || 0) + (Number(xp) || 50);
+    }
+    save();
+    emit('progress');
+  },
+  challenges: () => data.challenges || {},
+  xp: () => data.xp || 0,
+  domainMastery() {
+    const scores = {};
+    const doms = Object.keys(graph.domains);
+    const masteredNodes = progress.masteredNodes();
+    const allCards = typeof flashcards !== 'undefined' ? flashcards.all() : [];
+
+    doms.forEach((d) => {
+      const domNodes = graph.nodes.filter((n) => n.domain === d);
+      const visitedCount = domNodes.filter((n) => (data.visited || []).includes(n.id)).length;
+      const nodePart = (visitedCount / Math.max(1, domNodes.length)) * 30;
+
+      const probCount = [...masteredNodes].filter((id) => nodeById.get(id)?.domain === d).length;
+      const probPart = Math.min(30, probCount * 15);
+
+      const chCount = Object.values(data.challenges || {}).filter((c) => c.solved && (c.domains || []).includes(d)).length;
+      const chPart = Math.min(25, chCount * 12.5);
+
+      const fcCount = allCards.filter((c) => (c.tags || []).includes(d) && (c.reps || 0) > 0).length;
+      const fcPart = Math.min(15, fcCount * 3);
+
+      scores[d] = Math.min(100, Math.round(nodePart + probPart + chPart + fcPart));
+    });
+    return scores;
+  },
+  polymathProfile() {
+    const xp = data.xp || 0;
+    const mastery = progress.domainMastery();
+    const sortedDoms = Object.entries(mastery).sort((a, b) => b[1] - a[1]);
+    const strongest = sortedDoms[0]?.[0] || 'philosophy';
+    const weakest = sortedDoms[sortedDoms.length - 1]?.[0] || 'science';
+
+    let level = 1;
+    let title = 'Aprendiz Curioso';
+    let icon = '🌱';
+    let nextXp = 150;
+    if (xp >= 1400) { level = 5; title = 'Polímata Renacentista'; icon = '👑'; nextXp = null; }
+    else if (xp >= 800) { level = 4; title = 'Filósofo Natural'; icon = '🏛️'; nextXp = 1400; }
+    else if (xp >= 400) { level = 3; title = 'Pensador Dialéctico'; icon = '🦉'; nextXp = 800; }
+    else if (xp >= 150) { level = 2; title = 'Conector de Saberes'; icon = '⚡'; nextXp = 400; }
+
+    const solvedChallenges = Object.values(data.challenges || {}).filter((c) => c.solved).length;
+    const allCards = typeof flashcards !== 'undefined' ? flashcards.all() : [];
+
+    const badgeCatalog = [
+      { id: 'first_step', name: 'Primer Paso', icon: '👣', desc: 'Exploraste tu primer concepto en el grafo.', unlocked: (data.visited || []).length >= 1 },
+      { id: 'rabbit_hole', name: 'Madriguera', icon: '🐇', desc: 'Visitaste 10 nodos interdisciplinarios.', unlocked: (data.visited || []).length >= 10 },
+      { id: 'socratic_voice', name: 'Voz Socrática', icon: '❓', desc: 'Completaste con éxito un problema socrático.', unlocked: progress.masteredNodes().size >= 1 },
+      { id: 'bridge_builder', name: 'Puente de Saberes', icon: '🌉', desc: 'Resolviste tu primer desafío interdisciplinario.', unlocked: solvedChallenges >= 1 },
+      { id: 'polymath_trio', name: 'Tríada Polímata', icon: '🎯', desc: 'Superaste 3 desafíos interdisciplinarios.', unlocked: solvedChallenges >= 3 },
+      { id: 'memory_guardian', name: 'Guardián de la Memoria', icon: '🗂', desc: 'Tienes 10 o más tarjetas en tu mazo de repaso.', unlocked: allCards.length >= 10 },
+      { id: 'balanced_mind', name: 'Mente Equilibrada', icon: '⚖️', desc: 'Alcanzaste al menos 25% de maestría en todas las disciplinas.', unlocked: Object.values(mastery).every((v) => v >= 25) },
+    ];
+
+    return {
+      xp,
+      level,
+      title,
+      icon,
+      nextXp,
+      mastery,
+      strongest,
+      weakest,
+      badges: badgeCatalog,
+      solvedChallenges,
+    };
+  },
+  reset() { data = { problems: {}, quiz: { right: 0, total: 0 }, visited: [], challenges: {}, xp: 0, badges: [] }; save(); emit('progress'); },
 };
 
 // Mazo de flashcards con repetición espaciada (solo localStorage)

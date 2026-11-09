@@ -306,5 +306,57 @@ async def test_debate_turn_with_mocked_gemini():
         assert "gemini" in res["engine"]
 
 
+@pytest.mark.anyio
+async def test_challenge_generate_and_eval_with_mocked_gemini():
+    mock_gen = {
+        "title": "Entropía y Algoritmos",
+        "domains": ["science", "technology"],
+        "nodes": ["entropy", "information_theory"],
+        "level": "intermediate",
+        "question": "¿Cómo se conecta la compresión de datos con la segunda ley?",
+        "options": [
+            "La entropía de Shannon fija el límite físico de compresión óptima sin pérdida.",
+            "La compresión viola la conservación de masa.",
+            "El algoritmo no requiere energía.",
+            "Solo aplica a imágenes."
+        ],
+        "correct": 0,
+        "explanation": "El teorema de Shannon define la longitud mínima de código en bits.",
+        "xp": 50,
+    }
+    mock_eval = {
+        "is_correct": True,
+        "score": 95,
+        "xp": 50,
+        "feedback": "Excelente deducción sobre el límite de Shannon.",
+        "suggested_nodes": ["entropy", "information_theory"],
+    }
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.side_effect = [mock_gen, mock_eval]
+
+        # 1. Generación
+        gen_res = await llm.generate_interdisciplinary_challenge_with_llm("science", "technology")
+        assert gen_res is not None
+        assert "gemini" in gen_res["engine"]
+        assert gen_res["correct"] == 0
+
+        # 2. Evaluación
+        eval_res = await llm.evaluate_challenge_solution_with_llm(
+            "challenge_1",
+            gen_res["question"],
+            gen_res["options"][0],
+            "Shannon demostró el límite de entropía.",
+            gen_res["explanation"],
+            ["science", "technology"],
+        )
+        assert eval_res is not None
+        assert eval_res["is_correct"] is True
+        assert eval_res["score"] == 95
+        assert "gemini" in eval_res["engine"]
+
+
+
 
 

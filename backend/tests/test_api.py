@@ -260,5 +260,36 @@ def test_debate_catalog_and_turn_endpoints():
     assert "petición de principio" in d_user["text"] or "agudeza" in d_user["text"]
 
 
+def test_challenge_bank_and_generate_and_eval_endpoints():
+    # 1. Banco de desafíos
+    r_bank = client.get("/api/challenge/bank")
+    assert r_bank.status_code == 200
+    bank = r_bank.json()
+    assert len(bank) >= 5
+    assert "entropy_and_shannon" in [c["id"] for c in bank]
+
+    # 2. Generación heurística
+    r_gen = client.post("/api/challenge/generate", json={"domain1": "science", "domain2": "technology", "use_llm": False})
+    assert r_gen.status_code == 200
+    d_gen = r_gen.json()
+    assert "question" in d_gen and len(d_gen["options"]) == 4
+
+    # 3. Evaluación heurística
+    r_eval = client.post("/api/challenge/evaluate", json={
+        "challenge_id": "entropy_and_shannon",
+        "question": d_gen["question"],
+        "user_answer": d_gen["options"][0],
+        "user_reasoning": "El borrado de información disipa calor según Landauer.",
+        "domains": ["science", "technology"],
+        "use_llm": False,
+    })
+    assert r_eval.status_code == 200
+    d_eval = r_eval.json()
+    assert d_eval["is_correct"] is True
+    assert d_eval["xp"] >= 40
+    assert "feedback" in d_eval
+
+
+
 
 

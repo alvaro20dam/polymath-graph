@@ -1,0 +1,106 @@
+{
+  "challenges": [
+    {
+      "id": "entropy_and_shannon",
+      "title": "El demonio de Maxwell y la información física",
+      "domains": ["science", "technology"],
+      "nodes": ["entropy", "information_theory"],
+      "level": "intermediate",
+      "question": "¿Por qué el experimento mental del Demonio de Maxwell requirió la teoría de la información de Shannon y el principio de Landauer para salvar la segunda ley de la termodinámica?",
+      "options": [
+        "Porque borrar un bit de información en la memoria del demonio disipa calor inevitablemente (kT ln 2), compensando la reducción aparente de entropía.",
+        "Porque el demonio solo puede operar en un vacío cuántico sin temperatura.",
+        "Porque la entropía solo existe en sistemas macroscópicos cerrados sin observadores.",
+        "Porque los gases ideales no tienen entropía estadística cuantificable."
+      ],
+      "correct": 0,
+      "explanation": "Rolf Landauer y Charles Bennett demostraron que la adquisición de información no necesariamente disipa calor, pero borrar la memoria física del observador para restaurar el ciclo sí exige un coste termodinámico mínimo de kT ln 2 por bit, preservando la segunda ley.",
+      "xp": 50
+    },
+    {
+      "id": "neural_nets_and_epistemology",
+      "title": "El problema de la inducción y el sobreajuste (Overfitting)",
+      "domains": ["philosophy", "technology"],
+      "nodes": ["epistemology", "neural_networks"],
+      "level": "intermediate",
+      "question": "¿Cómo se vincula el escepticismo de David Hume sobre la inducción con el fenómeno del sobreajuste (overfitting) en redes neuronales y machine learning?",
+      "options": [
+        "Memorizar casos particulares pasados no garantiza generalización a casos no observados; asumir que los datos futuros replicarán fielmente los pasados es una expectativa heurística, no una certeza deductiva.",
+        "Las redes neuronales prueban que la inducción de Hume era matemáticamente infalible gracias al gradiente descendente.",
+        "El descenso del gradiente convierte cualquier inferencia inductiva empírica en una tautología formal incontrovertible.",
+        "El sesgo inductivo de un modelo solo funciona cuando los datos de entrenamiento son absolutamente infinitos."
+      ],
+      "correct": 0,
+      "explanation": "Hume demostró que ninguna cantidad de cisnes blancos observados garantiza deductivamente que el próximo no sea negro. En inteligencia artificial, si un modelo memoriza las peculiaridades del entrenamiento en vez de los patrones subyacentes, fracasa ante datos nuevos.",
+      "xp": 50
+    },
+    {
+      "id": "godel_and_turing",
+      "title": "Límites del algoritmo: Incompletitud y el problema de la parada",
+      "domains": ["logic", "technology"],
+      "nodes": ["godel_incompleteness", "turing_machine"],
+      "level": "expert",
+      "question": "¿Qué vínculo estructural y metodológico profundo une la sentencia indecidible de Gödel con la demostración de Turing sobre la indecidibilidad del problema de la parada?",
+      "options": [
+        "Ambos emplean una técnica de diagonalización auto-referencial (heredera de Cantor) para demostrar que ningún procedimiento mecánico consistente puede resolver todas las afirmaciones de su propio dominio.",
+        "Gödel demostró que la máquina universal de Turing siempre se detiene cuando los axiomas son finitos y ordenados.",
+        "Turing demostró que el test de Turing vuelve innecesaria la incompletitud matemática en sistemas formales.",
+        "Son teoremas incompatibles: Turing demostró que todo problema indecidible puede calcularse con memoria cinta ilimitada."
+      ],
+      "correct": 0,
+      "explanation": "Turing tradujo la incompletitud gödeliana al terreno de la computación: construyó una máquina hipotética que hace exactamente lo contrario de lo que un supuesto algoritmo predictor anticipa, provocando una contradicción lógica idéntica a 'Esta proposición no es demostrable'.",
+      "xp": 60
+    },
+    {
+      "id": "bayes_and_critical_thinking",
+      "title": "La falacia de la tasa base y la heurística de representatividad",
+      "domains": ["science", "logic"],
+      "nodes": ["bayes_theorem", "fallacies"],
+      "level": "beginner",
+      "question": "En una ciudad de 1.000.000 de habitantes, una prueba de reconocimiento facial con 99% de precisión señala a un transeúnte al azar como el único terrorista buscado. ¿Por qué ignorar la tasa base lleva a una conclusión falaz?",
+      "options": [
+        "Porque con 1% de falsos positivos en 1.000.000 de inocentes habrá ~10.000 inocentes señalados erróneamente, por lo que la probabilidad real de que el detenido sea el culpable es apenas ~1 en 10.001 (≈0.01%).",
+        "Porque el teorema de Bayes prohíbe el uso de algoritmos biométricos en espacios públicos.",
+        "Porque la probabilidad a posteriori de culpabilidad siempre es exactamente idéntica a la sensibilidad declarada de la prueba.",
+        "Porque los sistemas de reconocimiento facial nunca generan falsos positivos en poblaciones urbanas grandes."
+      ],
+      "correct": 0,
+      "explanation": "Kahneman y Tversky documentaron cómo el cerebro humano ignora la rareza del fenómeno (la tasa base) y asume falsamente que 99% de precisión en la prueba significa 99% de probabilidad de culpabilidad, cuando la abrumadora masa de inocentes genera miles de falsos positivos.",
+      "xp": 40
+    },
+    {
+      "id": "quantum_and_philosophy",
+      "title": "El gato de Schrödinger y los límites del realismo ingenuo",
+      "domains": ["science", "philosophy"],
+      "nodes": ["probability", "epistemology"],
+      "level": "intermediate",
+      "question": "¿Cuál fue el propósito epistemológico fundamental de Erwin Schrödinger al plantear su famosa paradoja del gato en superposición?",
+      "options": [
+        "Mostrar por reducción al absurdo que aplicar mecánicamente el formalismo cuántico microscópico a entidades macroscópicas sin una teoría de medición produce conclusiones manifiestamente incompatibles con la experiencia.",
+        "Comprobar experimentalmente que los felinos pueden suspender su metabolismo biológico dentro de una caja sellada.",
+        "Demostrar que la conciencia del observador humano es la fuerza física que altera las trayectorias subatómicas.",
+        "Refutar la ecuación de onda determinista que él mismo había formulado años atrás."
+      ],
+      "correct": 0,
+      "explanation": "Schrödinger no inventó la paradoja para defender que un gato esté física y simultáneamente vivo y muerto, sino para advertir a Bohr y Heisenberg que su modelo requería explicar con precisión dónde y cómo ocurre el colapso o la transición clásico-cuántica.",
+      "xp": 50
+    },
+    {
+      "id": "systems_and_ethics",
+      "title": "La tragedia de los comunes y los dilemas de acción colectiva",
+      "domains": ["philosophy", "science"],
+      "nodes": ["complexity_systems", "critical_thinking"],
+      "level": "intermediate",
+      "question": "¿Por qué en un sistema dinámico con recursos compartidos finitos la conducta individualmente racional de cada agente produce un colapso colectivamente irracional?",
+      "options": [
+        "Porque cada agente recibe el 100% del beneficio directo de sobreexplotar el recurso, mientras que el coste del deterioro ecológico se diluye entre todos los participantes (externalidad negativa).",
+        "Porque los sistemas complejos disipativos violan la conservación de la energía en regímenes de mercado libre.",
+        "Porque la teoría de juegos demuestra que el altruismo es biológicamente imposible en comunidades de más de diez individuos.",
+        "Porque la entropía social siempre se reduce cuando los recursos son de acceso abierto."
+      ],
+      "correct": 0,
+      "explanation": "Elinor Ostrom (Premio Nobel) demostró que, aunque la teoría de Hardin predice el colapso inevitable en ausencia de privatización o coerción estatal, muchas comunidades humanas logran evitar la tragedia mediante instituciones de autogobierno, monitoreo mutuo y sanciones graduales.",
+      "xp": 50
+    }
+  ]
+}

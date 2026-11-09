@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, llm, skills
-from .schemas import (DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
+from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -132,6 +132,38 @@ async def debate_turn(req: DebateTurnRequest) -> dict:
         if res is not None:
             return res
     return skills.debate_turn_heuristic(req.thinker_id, req.opponent_id, req.topic, req.history, req.user_intervention)
+
+
+# ---------------- Desafío Polímata & Gamificación Interdisciplinaria ----------------
+@app.get(f"{api}/challenge/bank")
+def challenge_bank() -> list[dict]:
+    """Devuelve el banco curado de desafíos interdisciplinarios."""
+    return skills.get_challenges_bank()
+
+
+@app.post(f"{api}/challenge/generate")
+async def challenge_generate(req: ChallengeGenerateRequest) -> dict:
+    """Genera un desafío interdisciplinario (con Gemini o banco heurístico)."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.generate_interdisciplinary_challenge_with_llm(req.domain1, req.domain2, req.level)
+        if res is not None:
+            return res
+    return skills.generate_challenge_heuristic(req.domain1, req.domain2, req.level)
+
+
+@app.post(f"{api}/challenge/evaluate")
+async def challenge_evaluate(req: ChallengeEvaluateRequest) -> dict:
+    """Evalúa la respuesta y razonamiento del estudiante en un desafío interdisciplinario."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.evaluate_challenge_solution_with_llm(
+            req.challenge_id, req.question, req.user_answer, req.user_reasoning, req.expected_explanation, req.domains
+        )
+        if res is not None:
+            return res
+    return skills.evaluate_challenge_heuristic(
+        req.challenge_id, req.question, req.user_answer, req.user_reasoning, req.expected_explanation, req.domains
+    )
+
 
 
 

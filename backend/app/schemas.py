@@ -100,4 +100,22 @@ class DebateTurnRequest(BaseModel):
     use_llm: bool = True
 
 
+class ChallengeGenerateRequest(BaseModel):
+    domain1: str = "any"
+    domain2: str = "any"
+    level: Level = "intermediate"
+    use_llm: bool = True
+
+
+class ChallengeEvaluateRequest(BaseModel):
+    challenge_id: str = ""
+    question: str
+    user_answer: str
+    user_reasoning: str = ""
+    expected_explanation: str = ""
+    domains: list[str] = []
+    use_llm: bool = True
+
+
+
 

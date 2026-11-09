@@ -639,3 +639,99 @@ def debate_turn_heuristic(
         "engine": "heuristic",
     }
 
+
+@skill
+def get_challenges_bank() -> list[dict]:
+    """Carga el banco curado de desafíos interdisciplinarios."""
+    try:
+        return data.load("challenges").get("challenges", [])
+    except Exception:
+        return []
+
+
+@skill
+def generate_challenge_heuristic(domain1: str = "any", domain2: str = "any", level: str = "intermediate") -> dict:
+    """Devuelve un desafío del banco filtrado por disciplinas o nivel con motor heurístico."""
+    bank = get_challenges_bank()
+    if not bank:
+        return {
+            "id": "entropy_and_shannon",
+            "title": "El demonio de Maxwell y la información física",
+            "domains": ["science", "technology"],
+            "nodes": ["entropy", "information_theory"],
+            "level": "intermediate",
+            "question": "¿Por qué el experimento del Demonio de Maxwell necesitó la teoría de la información para preservar la segunda ley de la termodinámica?",
+            "options": [
+                "Porque borrar un bit de memoria disipa calor inevitablemente (kT ln 2), compensando la entropía reducida.",
+                "Porque el demonio viola la conservación del momento lineal.",
+                "Porque los sistemas cerrados no admiten observadores biológicos.",
+                "Porque la entropía no aplica a partículas microscópicas."
+            ],
+            "correct": 0,
+            "explanation": "El principio de Landauer demostró que la información es física y que el borrado de memoria disipa calor.",
+            "xp": 50,
+            "engine": "heuristic",
+        }
+
+    # Filtrar según coincidencia de dominio
+    matches = []
+    for c in bank:
+        c_doms = c.get("domains", [])
+        d1_ok = domain1 == "any" or domain1 in c_doms
+        d2_ok = domain2 == "any" or domain2 in c_doms
+        if d1_ok and d2_ok:
+            matches.append(c)
+
+    chosen = matches[0] if matches else bank[0]
+    return {**chosen, "engine": "heuristic"}
+
+
+@skill
+def evaluate_challenge_heuristic(
+    challenge_id: str,
+    question: str,
+    user_answer: str,
+    user_reasoning: str = "",
+    expected_explanation: str = "",
+    domains: list[str] | None = None,
+) -> dict:
+    """Evalúa la respuesta y el razonamiento del estudiante en un desafío interdisciplinario."""
+    domains = domains or ["philosophy", "science"]
+    bank = {c["id"]: c for c in get_challenges_bank()}
+    base_ch = bank.get(challenge_id)
+
+    is_correct = False
+    correct_idx = base_ch.get("correct") if base_ch else 0
+    if base_ch and "options" in base_ch and 0 <= correct_idx < len(base_ch["options"]):
+        expected_text = base_ch["options"][correct_idx]
+        is_correct = user_answer.strip().lower() == expected_text.strip().lower() or user_answer.strip() == str(correct_idx)
+
+    # Si fue pregunta abierta o razonamiento libre
+    if not base_ch and expected_explanation:
+        toks_exp = set(terms(expected_explanation))
+        toks_user = set(terms(f"{user_answer} {user_reasoning}"))
+        overlap = len(toks_exp & toks_user) / max(1, len(toks_exp))
+        is_correct = overlap >= 0.25
+
+    xp_awarded = (base_ch.get("xp", 50) if is_correct else 15) if base_ch else (50 if is_correct else 15)
+    audit = fallacy_checker(f"{user_answer}. {user_reasoning}")
+
+    feedback = (
+        f"¡Brillante razonamiento interdisciplinario! Has conectado con precisión los principios de {' y '.join(domains)}."
+        if is_correct
+        else f"Buen intento de conexión conceptual. Sin embargo, el punto clave radica en que {expected_explanation or base_ch.get('explanation', '')}"
+    )
+
+    return {
+        "is_correct": is_correct,
+        "score": 95 if is_correct else 45,
+        "xp": xp_awarded,
+        "feedback": feedback,
+        "explanation": expected_explanation or (base_ch.get("explanation", "") if base_ch else ""),
+        "fallacies": audit.get("fallacies", []),
+        "domains": domains,
+        "suggested_nodes": base_ch.get("nodes", ["critical_thinking"]) if base_ch else ["critical_thinking"],
+        "engine": "heuristic",
+    }
+
+

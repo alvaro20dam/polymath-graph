@@ -6,6 +6,7 @@ import { analyze } from './engines/fallacy.js';
 import { localFlashcards } from './engines/cardgen.js';
 import { graph } from './state.js';
 import thinkersData from '@data/thinkers.json';
+import challengesData from '@data/challenges.json';
 
 let _llmStatus = null;
 let _statusPromise = null;
@@ -360,5 +361,90 @@ export async function requestDebateTurn({ thinkerId, opponentId, topic, history 
     engine: 'local',
   };
 }
+
+export async function fetchChallengesBank() {
+  try {
+    const res = await fetch('/api/challenge/bank');
+    if (res.ok) return await res.json();
+  } catch {
+    // fallback
+  }
+  return challengesData.challenges || [];
+}
+
+export async function requestGenerateChallenge({ domain1 = 'any', domain2 = 'any', level = 'intermediate', useLlm = true } = {}) {
+  try {
+    const res = await fetch('/api/challenge/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain1, domain2, level, use_llm: useLlm }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  // Fallback local desde challenges.json
+  const bank = challengesData.challenges || [];
+  const matches = bank.filter((c) => {
+    const d1_ok = domain1 === 'any' || c.domains.includes(domain1);
+    const d2_ok = domain2 === 'any' || c.domains.includes(domain2);
+    return d1_ok && d2_ok;
+  });
+  const chosen = matches[0] || bank[0];
+  return { ...chosen, engine: 'local' };
+}
+
+export async function requestEvaluateChallenge({ challengeId, question, userAnswer, userReasoning = '', expectedExplanation = '', domains = [], useLlm = true }) {
+  try {
+    const res = await fetch('/api/challenge/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        challenge_id: challengeId,
+        question,
+        user_answer: userAnswer,
+        user_reasoning: userReasoning,
+        expected_explanation: expectedExplanation,
+        domains,
+        use_llm: useLlm,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  const bank = challengesData.challenges || [];
+  const base = bank.find((c) => c.id === challengeId);
+  let isCorrect = false;
+  if (base && typeof base.correct === 'number') {
+    isCorrect = userAnswer.trim() === base.options[base.correct]?.trim() || userAnswer.trim() === String(base.correct);
+  } else if (expectedExplanation) {
+    const expToks = new Set(terms(expectedExplanation));
+    const userToks = new Set(terms(`${userAnswer} ${userReasoning}`));
+    const ov = [...expToks].filter((t) => userToks.has(t)).length;
+    isCorrect = ov / Math.max(1, expToks.size) >= 0.2;
+  }
+
+  return {
+    is_correct: isCorrect,
+    score: isCorrect ? 95 : 40,
+    xp: isCorrect ? (base?.xp || 50) : 15,
+    feedback: isCorrect
+      ? `¡Excelente conexión interdisciplinaria! Tu deducción aborda correctamente el puente entre ${(domains || ['las disciplinas']).join(' y ')}.`
+      : `Buen intento de análisis. El punto clave a tener en cuenta es: ${expectedExplanation || base?.explanation || ''}`,
+    explanation: expectedExplanation || base?.explanation || '',
+    fallacies: [],
+    domains: domains.length ? domains : (base?.domains || ['science', 'philosophy']),
+    suggested_nodes: base?.nodes || ['critical_thinking'],
+    engine: 'local',
+  };
+}
+
 
 

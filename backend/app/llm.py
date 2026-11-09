@@ -1155,4 +1155,130 @@ Genera tu réplica en primera persona en JSON:
     }
 
 
+async def generate_interdisciplinary_challenge_with_llm(
+    domain1: str = "any",
+    domain2: str = "any",
+    level: str = "intermediate",
+) -> dict | None:
+    """Genera con Gemini un desafío interdisciplinario que pone a prueba la conexión entre dos dominios del grafo."""
+    import random
+    from . import data
+
+    g = data.graph()
+    domains_list = list(g["domains"].keys())
+
+    d1 = domain1 if domain1 in domains_list else random.choice(domains_list)
+    remaining = [d for d in domains_list if d != d1]
+    d2 = domain2 if domain2 in domains_list and domain2 != d1 else random.choice(remaining)
+
+    d1_label = g["domains"][d1]["label"]
+    d2_label = g["domains"][d2]["label"]
+
+    system_prompt = f"""Eres ChallengeArchitect_Agent de Polymath Graph.
+Tu tarea es diseñar un desafío interdisciplinario de alto nivel pedagógico que cree un puente conceptual entre dos campos del saber: {d1_label} ({d1}) y {d2_label} ({d2}).
+
+PRINCIPIOS DE DISEÑO:
+1. No hagas preguntas de memoria enciclopédica o datos aislados.
+2. Plantea un enigma o escenario real donde un concepto de {d1_label} ilumine, resuelva o cuestione un problema de {d2_label}.
+3. Opciones: Ofrece 4 opciones bien redactadas:
+   - 1 opción correcta basada en una inferencia rigurosa.
+   - 3 distractores que representen falacias o errores conceptuales comunes.
+4. "correct": Índice del 0 al 3 de la respuesta correcta.
+5. "explanation": Síntesis pedagógica profunda de 2 a 3 párrafos explicando por qué la opción correcta es la acertada y qué puente interdisciplinario se forja.
+6. "nodes": 2 a 3 IDs de conceptos relacionados con el tema.
+7. Nivel objetivo: {level}.
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{{
+  "id": "challenge_d1_d2",
+  "title": "Título conciso del desafío",
+  "domains": ["{d1}", "{d2}"],
+  "nodes": ["critical_thinking"],
+  "level": "{level}",
+  "question": "Texto del desafío o pregunta de pensamiento polímata.",
+  "options": [
+    "Opción A",
+    "Opción B",
+    "Opción C",
+    "Opción D"
+  ],
+  "correct": 0,
+  "explanation": "Explicación detallada del puente interdisciplinario.",
+  "xp": 50
+}}
+"""
+
+    user_prompt = f"Genera un nuevo desafío interdisciplinario entre {d1_label} y {d2_label} en JSON:"
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.3)
+    if not isinstance(result, dict) or "question" not in result or not isinstance(result.get("options"), list):
+        return None
+
+    if len(result["options"]) != 4 or "correct" not in result:
+        return None
+
+    cfg = get_llm_config()
+    result["engine"] = f"gemini ({cfg['model']})"
+    if "domains" not in result or not isinstance(result["domains"], list):
+        result["domains"] = [d1, d2]
+    if "xp" not in result:
+        result["xp"] = 50
+
+    return result
+
+
+async def evaluate_challenge_solution_with_llm(
+    challenge_id: str,
+    question: str,
+    user_answer: str,
+    user_reasoning: str = "",
+    expected_explanation: str = "",
+    domains: list[str] | None = None,
+) -> dict | None:
+    """Evalúa con Gemini la solución y el razonamiento del estudiante en un desafío interdisciplinario."""
+    domains = domains or ["philosophy", "science"]
+    snippet = f"Pregunta: {question}\nRespuesta elegida: {user_answer}\nRazonamiento del estudiante: {user_reasoning}\nExplicación esperada: {expected_explanation}"
+
+    system_prompt = f"""Eres el Evaluador Polímata de Polymath Graph.
+Tu tarea es evaluar la respuesta y el razonamiento interdisciplinario de un estudiante entre las disciplinas: {', '.join(domains)}.
+
+DIRECTRICES DE EVALUACIÓN:
+1. Evalúa si la respuesta es correcta ("is_correct": true/false).
+2. Asigna un puntaje de rigor conceptual de 0 a 100 ("score").
+3. Asigna puntos de experiencia ("xp"): entre 40 y 60 si es correcto y bien justificado, 15 si intentó con razonamiento parcial, 0 si fue errático.
+4. "feedback": Comentario constructivo, estimulante y pedagógico (1 a 2 párrafos) que aclare la verdad del puente interdisciplinario y reconozca la audacia intelectual del estudiante.
+5. "suggested_nodes": 1 o 2 nodos del grafo recomendados para profundizar.
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{{
+  "is_correct": true,
+  "score": 90,
+  "xp": 50,
+  "feedback": "Comentario pedagógico detallado.",
+  "suggested_nodes": ["epistemology", "probability"]
+}}
+"""
+
+    result = await generate_gemini(system_prompt, snippet, json_mode=True, temperature=0.2)
+    if not isinstance(result, dict) or "is_correct" not in result:
+        return None
+
+    cfg = get_llm_config()
+    from . import skills
+    audit = skills.fallacy_checker(f"{user_answer} {user_reasoning}")
+
+    return {
+        "is_correct": bool(result.get("is_correct", False)),
+        "score": int(result.get("score", 70)),
+        "xp": int(result.get("xp", 40)),
+        "feedback": str(result.get("feedback", "Buen trabajo al conectar disciplinas.")),
+        "explanation": expected_explanation,
+        "fallacies": audit.get("fallacies", []),
+        "domains": domains,
+        "suggested_nodes": result.get("suggested_nodes", ["critical_thinking"]),
+        "engine": f"gemini ({cfg['model']})",
+    }
+
+
+
 
