@@ -1,12 +1,12 @@
 // AI Paper & Text Explainer: explicación in-context por niveles + chat con el documento (RAG TF-IDF + Gemini)
-import { el, nodeChip, graph, nodeById } from '../state.js';
+import { el, nodeChip, graph, nodeById, integrateGraphNodes, openNode } from '../state.js';
 import { explain, LEVELS } from '../engines/explain.js';
 import { buildIndex, search, chunkText, answerFromDocument, terms } from '../engines/rag.js';
 import { escapeHtml, cleanDocumentText, renderMarkdown } from '../engines/text.js';
-import { extractDocumentText, queryDocumentRag, explainDocumentText, getLlmStatus } from '../api.js';
+import { extractDocumentText, queryDocumentRag, explainDocumentText, extractGraphNodesFromText, getLlmStatus } from '../api.js';
 import samples from '@data/samples.json';
 
-const nodeIndex = buildIndex(graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.label} ${n.authors.join(' ')} ${n.summary}` })));
+let nodeIndex = buildIndex(graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.label} ${n.authors.join(' ')} ${n.summary}` })));
 
 export function mount(root) {
   const st = { text: samples.samples[0].text, level: 'beginner', lang: 'es', index: null, editing: false };
@@ -16,6 +16,7 @@ export function mount(root) {
   const editor = el('textarea', { hidden: true, style: 'flex:1;min-height:200px', placeholder: 'Pega aquí un artículo, fórmula o párrafo difícil…' });
   const fileInput = el('input', { type: 'file', accept: '.pdf,.txt,.md,text/plain,application/pdf', hidden: true });
   const editBtn = el('button', { class: 'btn small', onclick: () => toggleEdit() }, '✏ Pegar / editar texto');
+  const graphBtn = el('button', { class: 'btn small', style: 'border-color:var(--accent);color:var(--accent);font-weight:600', onclick: () => integrateToGraph() }, '🌐 Integrar conceptos al Grafo');
   const levelCtl = segControl(Object.entries(LEVELS), st.level, (v) => { st.level = v; refresh(); });
   const langCtl = segControl([['es', 'Español'], ['en', 'English']], st.lang, (v) => { st.lang = v; refresh(); });
 
@@ -48,8 +49,9 @@ export function mount(root) {
     el('div', { class: 'row', style: 'margin-bottom:.6rem; gap:.4rem;' },
       editBtn,
       el('button', { class: 'btn small primary', onclick: () => fileInput.click() }, '📄 Subir PDF o texto'),
+      graphBtn,
       fileInput,
-      el('span', { class: 'muted', style: 'font-size:.8rem' }, 'Selecciona texto o haz clic en un término.')),
+      el('span', { class: 'muted', style: 'font-size:.8rem' }, 'Selecciona texto o integra ideas al mapa.')),
     reader, editor);
 
   const explBox = el('div', { class: 'scroll', style: 'flex:1;min-height:120px' });
@@ -178,6 +180,81 @@ export function mount(root) {
     if (st.editing) toggleEdit();
     setText(s.text, true);
   });
+
+  async function integrateToGraph() {
+    const currentText = (st.editing ? editor.value : st.text).trim();
+    if (currentText.length < 15) {
+      alert('El documento es demasiado corto para extraer conceptos al grafo.');
+      return;
+    }
+    if (st.editing) toggleEdit();
+
+    graphBtn.disabled = true;
+    const origLabel = graphBtn.textContent;
+    graphBtn.textContent = '⏳ Extrayendo nodos…';
+    explBox.innerHTML = '';
+    explBox.append(
+      el('div', { class: 'card', style: 'text-align:center;padding:1.4rem' },
+        el('div', { style: 'font-size:1.8rem;margin-bottom:.4rem' }, '🌐'),
+        el('p', { style: 'font-weight:600;margin-bottom:.25rem' }, 'GraphArchitect_Agent analizando el documento…'),
+        el('p', { class: 'muted', style: 'font-size:.85rem' }, 'Identificando conceptos clave y tejiendo enlaces interdisciplinarios con el Grafo de Conocimiento.')
+      )
+    );
+
+    let res;
+    try {
+      res = await extractGraphNodesFromText(currentText, 3, true);
+    } catch {
+      res = { nodes: [], links: [], engine: 'error' };
+    } finally {
+      graphBtn.disabled = false;
+      graphBtn.textContent = origLabel;
+    }
+
+    explBox.innerHTML = '';
+    if (!res.nodes || !res.nodes.length) {
+      explBox.append(el('div', { class: 'callout warn' }, 'No se pudieron extraer nuevos conceptos de este texto. Intenta con un documento más extenso.'));
+      return;
+    }
+
+    integrateGraphNodes(res.nodes, res.links || []);
+    nodeIndex = buildIndex(graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.label} ${(n.authors || []).join(' ')} ${n.summary}` })));
+
+    const isAi = res.engine && res.engine.includes('gemini');
+    explBox.append(
+      el('div', { class: 'callout good', style: 'margin-bottom:.7rem' },
+        el('b', {}, `✨ ¡${res.nodes.length} concepto(s) integrado(s) al Grafo Vivo! `),
+        el('span', { class: 'muted', style: 'font-size:.82rem' }, isAi ? `(Extraído con ${res.engine})` : '(Motor heurístico local)')
+      )
+    );
+
+    res.nodes.forEach((n) => {
+      const dom = graph.domains[n.domain] || { label: n.domain, color: '#7c8cff' };
+      const nodeLinks = (res.links || []).filter((l) => l.source === n.id);
+      explBox.append(
+        el('div', { class: 'card', style: `border-left:4px solid ${dom.color}` },
+          el('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:.3rem' },
+            el('span', { class: 'pill', style: `--c:${dom.color}` }, dom.label),
+            el('small', { class: 'muted' }, `Complejidad ${n.complexity}/5 · ${n.year || 2026}`)
+          ),
+          el('h3', { style: 'margin-bottom:.25rem' }, `✦ ${n.label}`),
+          el('p', { style: 'font-size:.9rem' }, n.summary),
+          el('p', { class: 'muted', style: 'font-size:.8rem' }, 'Autores: ' + (n.authors || []).join(', ')),
+          nodeLinks.length
+            ? el('div', { style: 'margin-top:.45rem' },
+                el('small', { class: 'muted', style: 'display:block;margin-bottom:.2rem' }, 'Conectado con:'),
+                ...nodeLinks.map((l) => nodeChip(l.target)))
+            : null,
+          el('div', { style: 'margin-top:.6rem' },
+            el('button', { class: 'btn small primary', onclick: () => openNode(n.id) }, '🚀 Ver en el Grafo Interactivo →')
+          )
+        )
+      );
+    });
+
+    const names = res.nodes.map((n) => `**✦ ${n.label}**`).join(', ');
+    addChat('tutor', `🌐 He integrado ${res.nodes.length} nuevo(s) nodo(s) al Grafo de Conocimiento a partir de tu lectura: ${names}. Puedes pulsar **«🚀 Ver en el Grafo Interactivo»** en el panel superior para explorar sus conexiones en vivo.`);
+  }
 
   // ---------- chat con documento ----------
   function addChat(role, content) {

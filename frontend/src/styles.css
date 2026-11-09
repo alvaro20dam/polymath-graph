@@ -223,6 +223,7 @@ table.tt tr.counter td { background: #f8717122; }
 .gnode .main { stroke: #0b0e17; stroke-width: 1.5; transition: r .2s; }
 .gnode .ring { fill: none; stroke: transparent; stroke-width: 2; }
 .gnode.mastered .ring { stroke: var(--good); stroke-dasharray: 3 3; }
+.gnode.custom-node .ring { stroke: var(--accent2); stroke-dasharray: 2 2; }
 .gnode.sel .main { stroke: #fff; stroke-width: 3; }
 .gnode.hov .main { stroke: #fff; stroke-width: 2; }
 .gnode.onpath .main { stroke: #fbbf24; stroke-width: 3; }

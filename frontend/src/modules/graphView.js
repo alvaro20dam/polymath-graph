@@ -1,6 +1,6 @@
 // FrontendUIX_Agent · skill: d3_graph_renderer
 import * as d3 from 'd3';
-import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus } from '../state.js';
+import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus, removeCustomNode } from '../state.js';
 import { buildIndex, search } from '../engines/rag.js';
 import { PROBLEMS } from '../engines/socratic.js';
 import timelines from '@data/timelines.json';
@@ -10,13 +10,31 @@ const LOGIC_FOR = { fallacies: 'fallacy', cognitive_biases: 'fallacy', critical_
 
 const idOf = (x) => (typeof x === 'object' ? x.id : x);
 const degree = new Map();
-graph.links.forEach((l) => { degree.set(l.source, (degree.get(l.source) || 0) + 1); degree.set(l.target, (degree.get(l.target) || 0) + 1); });
-const adj = new Map(graph.nodes.map((n) => [n.id, new Set()]));
-graph.links.forEach((l) => { adj.get(l.source).add(l.target); adj.get(l.target).add(l.source); });
+const adj = new Map();
+let searchIndex = null;
 
-const searchIndex = buildIndex(
-  graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.label} ${n.label} ${n.authors.join(' ')} ${graph.domains[n.domain].label} ${n.summary}` }))
-);
+function rebuildTopology() {
+  degree.clear();
+  adj.clear();
+  graph.nodes.forEach((n) => adj.set(n.id, new Set()));
+  graph.links.forEach((l) => {
+    const s = idOf(l.source);
+    const t = idOf(l.target);
+    degree.set(s, (degree.get(s) || 0) + 1);
+    degree.set(t, (degree.get(t) || 0) + 1);
+    if (!adj.has(s)) adj.set(s, new Set());
+    if (!adj.has(t)) adj.set(t, new Set());
+    adj.get(s).add(t);
+    adj.get(t).add(s);
+  });
+  searchIndex = buildIndex(
+    graph.nodes.map((n) => ({
+      id: n.id,
+      text: `${n.label} ${n.label} ${n.label} ${(n.authors || []).join(' ')} ${graph.domains[n.domain]?.label || ''} ${n.summary}`,
+    }))
+  );
+}
+rebuildTopology();
 
 function bfsDepth(start, maxDepth) {
   const seen = new Map([[start, 0]]);
@@ -24,7 +42,7 @@ function bfsDepth(start, maxDepth) {
   while (q.length) {
     const cur = q.shift();
     if (seen.get(cur) >= maxDepth) continue;
-    for (const nb of adj.get(cur)) if (!seen.has(nb)) { seen.set(nb, seen.get(cur) + 1); q.push(nb); }
+    for (const nb of adj.get(cur) || []) if (!seen.has(nb)) { seen.set(nb, seen.get(cur) + 1); q.push(nb); }
   }
   return new Set(seen.keys());
 }
@@ -35,7 +53,7 @@ export function shortestPath(a, b) {
   const q = [a];
   while (q.length) {
     const cur = q.shift();
-    for (const nb of adj.get(cur)) {
+    for (const nb of adj.get(cur) || []) {
       if (prev.has(nb)) continue;
       prev.set(nb, cur);
       if (nb === b) {
@@ -52,8 +70,8 @@ export function shortestPath(a, b) {
 export function mount(root) {
   // ------------ estado ------------
   const state = { selected: null, hover: null, domains: new Set(Object.keys(graph.domains)), maxComplexity: 5, depth: 'all', overlay: null, activePath: null, pathStep: 0 };
-  const nodes = graph.nodes.map((n) => ({ ...n, deg: degree.get(n.id) || 0 }));
-  const links = graph.links.map((l) => ({ ...l }));
+  let nodes = graph.nodes.map((n) => ({ ...n, deg: degree.get(n.id) || 0 }));
+  let links = graph.links.map((l) => ({ ...l }));
 
   // ------------ DOM ------------
   const left = el('aside', { class: 'side', 'aria-label': 'Filtros' });
@@ -102,7 +120,7 @@ export function mount(root) {
 
   Object.entries(graph.domains).forEach(([id, d]) => {
     const count = nodes.filter((n) => n.domain === id).length;
-    const btn = el('button', { class: 'domain-toggle', style: `--c:${d.color}`, 'aria-pressed': 'true', onclick: () => {
+    const btn = el('button', { class: 'domain-toggle', 'data-domain': id, style: `--c:${d.color}`, 'aria-pressed': 'true', onclick: () => {
       if (state.domains.has(id)) state.domains.delete(id); else state.domains.add(id);
       btn.classList.toggle('off', !state.domains.has(id));
       btn.setAttribute('aria-pressed', state.domains.has(id));
@@ -212,10 +230,10 @@ export function mount(root) {
       .attr('class', (d) => `glink rel-${d.relation}`).attr('marker-end', 'url(#arrow)');
 
     nodeSel = gNodes.selectAll('g.gnode').data(vNodes, (d) => d.id).join((enter) => {
-      const g = enter.append('g').attr('class', (d) => 'gnode' + (d.deg >= 6 ? ' hub' : '')).attr('tabindex', 0).attr('role', 'button').attr('aria-label', (d) => d.label);
+      const g = enter.append('g').attr('class', (d) => 'gnode' + (d.deg >= 6 || d.custom ? ' hub' : '') + (d.custom ? ' custom-node' : '')).attr('tabindex', 0).attr('role', 'button').attr('aria-label', (d) => d.label);
       g.append('circle').attr('class', 'ring').attr('r', (d) => radius(d) + 5);
-      g.append('circle').attr('class', 'main').attr('r', radius).attr('fill', (d) => graph.domains[d.domain].color);
-      g.append('text').attr('class', 'glabel').attr('y', (d) => radius(d) + 12).attr('text-anchor', 'middle').text((d) => d.label);
+      g.append('circle').attr('class', 'main').attr('r', radius).attr('fill', (d) => graph.domains[d.domain]?.color || '#7c8cff');
+      g.append('text').attr('class', 'glabel').attr('y', (d) => radius(d) + 12).attr('text-anchor', 'middle').text((d) => (d.custom ? `✦ ${d.label}` : d.label));
       g.on('click', (ev, d) => { ev.stopPropagation(); select(d.id); })
         .on('keydown', (ev, d) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(d.id); } })
         .on('mouseenter', (ev, d) => { state.hover = d.id; showTip(ev, d); applyClasses(); })
@@ -234,6 +252,42 @@ export function mount(root) {
     else sim.alpha(0.001).restart();
     applyClasses();
   }
+
+  bus.addEventListener('graph-updated', () => {
+    rebuildTopology();
+    const prevById = new Map(nodes.map((n) => [n.id, n]));
+    nodes = graph.nodes.map((n) => {
+      const old = prevById.get(n.id);
+      if (old) {
+        old.deg = degree.get(n.id) || 0;
+        old.label = n.label;
+        old.summary = n.summary;
+        old.authors = n.authors;
+        old.complexity = n.complexity;
+        return old;
+      }
+      const a = anchor(n.domain);
+      return {
+        ...n,
+        deg: degree.get(n.id) || 0,
+        x: a.x + (Math.random() - 0.5) * 40,
+        y: a.y + (Math.random() - 0.5) * 40,
+      };
+    });
+    links = graph.links.map((l) => ({
+      source: idOf(l.source),
+      target: idOf(l.target),
+      relation: l.relation,
+    }));
+    domainBox.querySelectorAll('.domain-toggle').forEach((btn) => {
+      const domId = btn.getAttribute('data-domain');
+      const countEl = btn.querySelector('.count');
+      if (domId && countEl) {
+        countEl.textContent = nodes.filter((n) => n.domain === domId).length;
+      }
+    });
+    render(0.55);
+  });
 
   sim.on('tick', () => {
     linkSel.attr('x1', (d) => d.source.x).attr('y1', (d) => d.source.y).attr('x2', (d) => d.target.x).attr('y2', (d) => d.target.y);
@@ -255,7 +309,7 @@ export function mount(root) {
 
   function applyClasses() {
     const focus = state.hover ?? state.selected;
-    const nb = focus ? new Set([focus, ...adj.get(focus)]) : null;
+    const nb = focus ? new Set([focus, ...(adj.get(focus) || [])]) : null;
     const onPath = state.overlay ? new Set(state.overlay.ids) : null;
     const mastered = progress.masteredNodes();
 
@@ -298,14 +352,16 @@ export function mount(root) {
 
   function showTip(ev, d) {
     tooltip.hidden = false;
-    const dom = graph.domains[d.domain];
+    const dom = graph.domains[d.domain] || { label: d.domain, color: '#7c8cff' };
     const yearStr = d.year < 0 ? `${-d.year} a.C.` : `${d.year}`;
+    const customTag = d.custom ? '<div style="font-size:.7rem;color:var(--accent2);margin-top:2px">✦ Nodo integrado de tus documentos</div>' : '';
     tooltip.innerHTML = `
       <div style="display:flex;align-items:center;gap:.45rem;margin-bottom:2px">
         <span style="width:8px;height:8px;border-radius:50%;background:${dom.color};flex:none;box-shadow:0 0 6px ${dom.color}"></span>
-        <b style="color:var(--text)">${d.label}</b>
+        <b style="color:var(--text)">${d.custom ? '✦ ' + d.label : d.label}</b>
       </div>
       <div class="muted" style="font-size:.74rem">${dom.label} · ${yearStr} · Complejidad ${d.complexity}/5</div>
+      ${customTag}
     `;
     moveTip(ev, d);
   }
@@ -346,10 +402,11 @@ export function mount(root) {
 
   // ------------ selección y panel de detalle ------------
   function select(id, center = false) {
+    const n = nodeById.get(id);
+    if (!n) return;
     state.selected = id;
     progress.visit(id);
     // si el nodo estaba filtrado, lo hace visible
-    const n = nodeById.get(id);
     if (!state.domains.has(n.domain)) { state.domains.add(n.domain); domainBox.querySelectorAll('.domain-toggle').forEach((b) => b.classList.remove('off')); }
     if (n.complexity > state.maxComplexity) { state.maxComplexity = n.complexity; cxRange.value = n.complexity; cxLabel.textContent = n.complexity; }
     if (state.overlay?.kind === 'shortest') state.overlay = null;
@@ -367,25 +424,29 @@ export function mount(root) {
   }
 
   function rabbitHole() {
-    const pool = state.selected ? [...adj.get(state.selected)] : nodes.map((n) => n.id);
-    const cross = state.selected ? pool.filter((id) => nodeById.get(id).domain !== nodeById.get(state.selected).domain) : pool;
+    const pool = state.selected ? [...(adj.get(state.selected) || [])] : nodes.map((n) => n.id);
+    const cross = state.selected ? pool.filter((id) => nodeById.get(id)?.domain !== nodeById.get(state.selected)?.domain) : pool;
     const list = cross.length ? cross : pool;
-    select(list[Math.floor(Math.random() * list.length)], true);
+    if (list.length) select(list[Math.floor(Math.random() * list.length)], true);
   }
 
   function renderDetail(id) {
     const n = nodeById.get(id);
-    const d = graph.domains[n.domain];
-    const outs = graph.links.filter((l) => l.source === id);
-    const ins = graph.links.filter((l) => l.target === id);
+    if (!n) return;
+    const d = graph.domains[n.domain] || { label: n.domain, color: '#7c8cff' };
+    const outs = graph.links.filter((l) => idOf(l.source) === id);
+    const ins = graph.links.filter((l) => idOf(l.target) === id);
     const year = n.year < 0 ? `${-n.year} a.C.` : n.year;
-    const probs = PROBLEMS.filter((p) => p.node === id || p.related.includes(id));
+    const probs = PROBLEMS.filter((p) => p.node === id || (p.related && p.related.includes(id)));
     const actions = [];
     probs.slice(0, 2).forEach((p) => actions.push(el('button', { class: 'btn primary small', onclick: () => navigate('tutor', { problem: p.id }) }, `❓ Practicar: ${p.title}`)));
     if (LAB_FOR[id]) actions.push(el('button', { class: 'btn small', onclick: () => navigate('lab', { sim: LAB_FOR[id] }) }, '🧪 Simular'));
     if (LOGIC_FOR[id]) actions.push(el('button', { class: 'btn small', onclick: () => navigate('logic', { sub: LOGIC_FOR[id] }) }, '⚖ Lógica'));
     timelines.scenarios.filter((s) => s.theme === id).forEach((s) => actions.push(el('button', { class: 'btn small', onclick: () => navigate('timeline', { scenario: s.id }) }, '⏳ ' + s.title)));
     actions.push(el('button', { class: 'btn small', onclick: () => navigate('explainer', { text: `${n.label}. ${n.summary}` }) }, '📖 Explicar'));
+    if (n.custom) {
+      actions.push(el('button', { class: 'btn small', style: 'border-color:var(--bad);color:var(--bad)', onclick: () => { removeCustomNode(id); clearSelection(); } }, '🗑 Eliminar nodo'));
+    }
 
     const targetSel = el('select', { 'aria-label': 'Destino del camino' }, el('option', { value: '' }, 'Elegir destino…'),
       ...nodes.filter((x) => x.id !== id).sort((a, b) => a.label.localeCompare(b.label)).map((x) => el('option', { value: x.id }, x.label)));
@@ -396,24 +457,27 @@ export function mount(root) {
       const p = shortestPath(id, targetSel.value);
       if (!p) { pathResult.append(el('p', { class: 'muted' }, 'Sin conexión.')); return; }
       state.overlay = { ids: p, kind: 'shortest' };
-      p.forEach((pid) => state.domains.add(nodeById.get(pid).domain));
+      p.forEach((pid) => { if (nodeById.has(pid)) state.domains.add(nodeById.get(pid).domain); });
       pathResult.append(el('p', { class: 'muted' }, `${p.length - 1} saltos:`), el('div', {}, ...p.map((pid) => nodeChip(pid))));
       applyClasses(); drawOverlay();
     });
 
     const relItem = (l, dir) => {
-      const other = dir === 'out' ? l.target : l.source;
-      const verb = graph.relations[l.relation];
+      const other = dir === 'out' ? idOf(l.target) : idOf(l.source);
+      const verb = graph.relations[l.relation] || 'influye en';
       return el('li', {}, dir === 'out' ? el('span', { class: 'rel-verb' }, verb) : null, nodeChip(other), dir === 'in' ? el('span', { class: 'rel-verb' }, `${verb} → esto`) : null);
     };
 
     right.innerHTML = '';
     right.append(
-      el('div', { class: 'row' }, el('span', { class: 'pill', style: `--c:${d.color}` }, d.label), el('button', { class: 'btn ghost small', style: 'margin-left:auto', 'aria-label': 'Cerrar panel', onclick: () => right.classList.add('closed') }, '✕')),
-      el('h2', { class: 'node-title' }, n.label),
+      el('div', { class: 'row' },
+        el('span', { class: 'pill', style: `--c:${d.color}` }, d.label),
+        n.custom ? el('span', { class: 'pill', style: '--c:var(--accent2)' }, '✦ Tu Biblioteca') : null,
+        el('button', { class: 'btn ghost small', style: 'margin-left:auto', 'aria-label': 'Cerrar panel', onclick: () => right.classList.add('closed') }, '✕')),
+      el('h2', { class: 'node-title' }, n.custom ? `✦ ${n.label}` : n.label),
       el('p', { class: 'muted' }, `${year} · Complejidad `, el('span', { class: 'dots' }, '●'.repeat(n.complexity) + '○'.repeat(5 - n.complexity))),
       el('p', {}, n.summary),
-      el('p', {}, el('b', {}, 'Autores: '), n.authors.join(', ')),
+      el('p', {}, el('b', {}, 'Autores: '), (n.authors || []).join(', ')),
       el('div', { class: 'row', style: 'margin:.5rem 0' }, ...actions),
       el('h4', { style: 'margin-top:1rem' }, `Conexiones (${outs.length + ins.length})`),
       el('ul', { class: 'rel-list' }, ...ins.map((l) => relItem(l, 'in')), ...outs.map((l) => relItem(l, 'out'))),

@@ -74,3 +74,10 @@ class NodeDraft(BaseModel):
     authors: list[str] = []
     summary: str = ""
     year: int | None = None
+
+
+class GraphExtractRequest(BaseModel):
+    text: str = Field(min_length=10, max_length=50000)
+    max_nodes: int = Field(default=3, ge=1, le=5)
+    use_llm: bool = True
+

@@ -230,3 +230,35 @@ def test_safe_json_loads_resilience():
     # Invalid string returns None
     assert llm._safe_json_loads("Esto no es JSON") is None
 
+
+@pytest.mark.anyio
+async def test_extract_graph_nodes_with_mocked_gemini():
+    mock_payload = {
+        "concepts": [
+            {
+                "topic": "Estructuras disipativas",
+                "domain": "science",
+                "complexity": 4,
+                "year": 1977,
+                "authors": ["Ilya Prigogine"],
+                "summary": "Sistemas termodinámicos abiertos que mantienen el orden lejos del equilibrio.",
+                "connections": [
+                    {"target": "information_theory", "relation": "influences"},
+                    {"target": "epistemology", "relation": "applies"},
+                ],
+            }
+        ]
+    }
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_payload
+
+        res = await llm.extract_graph_nodes_with_llm("Texto sobre estructuras disipativas de Prigogine", max_nodes=2)
+        assert res is not None
+        assert len(res["nodes"]) == 1
+        assert res["nodes"][0]["id"] == "estructuras_disipativas"
+        assert res["nodes"][0]["custom"] is True
+        assert len(res["links"]) >= 2
+        assert "gemini" in res["engine"]
+
+

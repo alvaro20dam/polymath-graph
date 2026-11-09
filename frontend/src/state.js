@@ -1,4 +1,4 @@
-// Estado compartido: progreso del estudiante (solo localStorage, sin cuentas) y utilidades de navegación.
+// Estado compartido: progreso del estudiante (solo localStorage, sin cuentas), grafo vivo y utilidades de navegación.
 import graph from '@data/graph.json';
 
 export { graph };
@@ -6,6 +6,50 @@ export const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
 export const domainOf = (id) => graph.domains[nodeById.get(id)?.domain];
 
 const KEY = 'polymath-graph.progress.v1';
+const CUSTOM_GRAPH_KEY = 'polymath-graph.custom-graph.v1';
+
+function loadCustomGraph() {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_GRAPH_KEY)) ?? { nodes: [], links: [] };
+  } catch {
+    return { nodes: [], links: [] };
+  }
+}
+
+function saveCustomGraph() {
+  try {
+    const customNodes = graph.nodes.filter((n) => n.custom);
+    const customNodeIds = new Set(customNodes.map((n) => n.id));
+    const customLinks = graph.links.filter((l) => {
+      const s = typeof l.source === 'object' ? l.source.id : l.source;
+      const t = typeof l.target === 'object' ? l.target.id : l.target;
+      return customNodeIds.has(s) || customNodeIds.has(t);
+    }).map((l) => ({
+      source: typeof l.source === 'object' ? l.source.id : l.source,
+      target: typeof l.target === 'object' ? l.target.id : l.target,
+      relation: l.relation || 'influences',
+    }));
+    localStorage.setItem(CUSTOM_GRAPH_KEY, JSON.stringify({ nodes: customNodes, links: customLinks }));
+  } catch { /* modo privado */ }
+}
+
+// Hidratar nodos personalizados guardados al iniciar
+const _initialCustom = loadCustomGraph();
+if (_initialCustom.nodes?.length) {
+  _initialCustom.nodes.forEach((n) => {
+    if (n && n.id && !nodeById.has(n.id) && graph.domains[n.domain]) {
+      const cleanNode = { ...n, custom: true };
+      graph.nodes.push(cleanNode);
+      nodeById.set(cleanNode.id, cleanNode);
+    }
+  });
+  (_initialCustom.links || []).forEach((l) => {
+    if (l && nodeById.has(l.source) && nodeById.has(l.target)) {
+      const exists = graph.links.some((x) => x.source === l.source && x.target === l.target);
+      if (!exists) graph.links.push({ source: l.source, target: l.target, relation: l.relation || 'influences' });
+    }
+  });
+}
 
 function load() {
   try {
@@ -21,6 +65,73 @@ const save = () => {
 
 export const bus = new EventTarget();
 const emit = (type, detail) => bus.dispatchEvent(new CustomEvent(type, { detail }));
+
+export function integrateGraphNodes(newNodes = [], newLinks = []) {
+  const addedNodes = [];
+  const addedLinks = [];
+
+  newNodes.forEach((n) => {
+    if (!n || !n.id) return;
+    const domain = graph.domains[n.domain] ? n.domain : 'science';
+    const nodeObj = {
+      id: n.id,
+      label: n.label || n.id,
+      domain,
+      complexity: Math.max(1, Math.min(5, Number(n.complexity) || 3)),
+      year: n.year ?? 2026,
+      authors: Array.isArray(n.authors) && n.authors.length ? n.authors : ['Documento del usuario'],
+      summary: n.summary || '',
+      custom: true,
+    };
+    if (!nodeById.has(nodeObj.id)) {
+      graph.nodes.push(nodeObj);
+      nodeById.set(nodeObj.id, nodeObj);
+      addedNodes.push(nodeObj);
+    } else if (nodeById.get(nodeObj.id).custom) {
+      const existing = nodeById.get(nodeObj.id);
+      Object.assign(existing, nodeObj);
+      addedNodes.push(existing);
+    }
+  });
+
+  newLinks.forEach((l) => {
+    if (!l || !l.source || !l.target) return;
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    if (!nodeById.has(s) || !nodeById.has(t) || s === t) return;
+    const exists = graph.links.some((x) => {
+      const xs = typeof x.source === 'object' ? x.source.id : x.source;
+      const xt = typeof x.target === 'object' ? x.target.id : x.target;
+      return xs === s && xt === t;
+    });
+    if (!exists) {
+      const linkObj = { source: s, target: t, relation: graph.relations[l.relation] ? l.relation : 'influences' };
+      graph.links.push(linkObj);
+      addedLinks.push(linkObj);
+    }
+  });
+
+  saveCustomGraph();
+  emit('graph-updated', { nodes: addedNodes, links: addedLinks });
+  return { nodes: addedNodes, links: addedLinks };
+}
+
+export function removeCustomNode(id) {
+  const n = nodeById.get(id);
+  if (!n || !n.custom) return false;
+  nodeById.delete(id);
+  const idx = graph.nodes.findIndex((x) => x.id === id);
+  if (idx !== -1) graph.nodes.splice(idx, 1);
+  for (let i = graph.links.length - 1; i >= 0; i--) {
+    const l = graph.links[i];
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    if (s === id || t === id) graph.links.splice(i, 1);
+  }
+  saveCustomGraph();
+  emit('graph-updated', { removed: id });
+  return true;
+}
 
 export const progress = {
   get: () => data,
@@ -70,6 +181,8 @@ export function el(tag, attrs = {}, ...children) {
 
 export function nodeChip(id) {
   const n = nodeById.get(id);
-  const d = graph.domains[n.domain];
-  return el('button', { class: 'node-chip', style: `--c:${d.color}`, title: n.summary, onclick: () => openNode(id) }, n.label);
+  if (!n) return el('span', { class: 'node-chip', style: '--c:#7c8cff' }, id);
+  const d = graph.domains[n.domain] || { color: '#7c8cff' };
+  const label = n.custom ? `✦ ${n.label}` : n.label;
+  return el('button', { class: 'node-chip', style: `--c:${d.color}`, title: n.summary, onclick: () => openNode(id) }, label);
 }

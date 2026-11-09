@@ -169,3 +169,18 @@ def test_fallacies_check_endpoint_llm_and_fallback():
         assert "steelmanning" in r_ai
         assert "gemini" in r_ai["engine"]
 
+
+def test_graph_extract_from_text_endpoint():
+    doc_text = (
+        "La termodinámica estadística fuera del equilibrio estudia cómo los sistemas complejos disipan energía y generan orden espontáneo.\n\n"
+        "Ilya Prigogine demostró que las estructuras disipativas conectan la entropía física con la autoorganización biológica y epistemológica."
+    )
+    r = client.post("/api/graph/extract-from-text", json={"text": doc_text, "max_nodes": 2, "use_llm": False})
+    assert r.status_code == 200
+    data = r.json()
+    assert data["engine"] == "heuristic"
+    assert len(data["nodes"]) >= 1
+    assert data["nodes"][0]["custom"] is True
+    assert len(data["links"]) >= 2
+
+

@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, llm, skills
-from .schemas import (ExplainRequest, FallacyRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
+from .schemas import (ExplainRequest, FallacyRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -79,6 +79,17 @@ def validate_node(draft: NodeDraft) -> dict:
         return skills.graph_node_builder(draft.topic, draft.domain, draft.connected_nodes, complexity=draft.complexity, authors=draft.authors, summary=draft.summary, year=draft.year)
     except ValueError as e:
         raise HTTPException(422, str(e))
+
+
+@app.post(f"{api}/graph/extract-from-text")
+async def extract_graph_nodes(req: GraphExtractRequest) -> dict:
+    """Extrae conceptos clave de un documento o texto (con Gemini o fallback heurístico) para expandir el grafo en vivo."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.extract_graph_nodes_with_llm(req.text, req.max_nodes)
+        if res is not None:
+            return res
+    return skills.extract_graph_nodes_from_text(req.text, req.max_nodes)
+
 
 
 @app.get(f"{api}/search")

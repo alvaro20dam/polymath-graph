@@ -808,3 +808,174 @@ DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
         result["notes"] = []
 
     return result
+
+
+async def extract_graph_nodes_with_llm(text: str, max_nodes: int = 3) -> dict | None:
+    """Extrae con Gemini Flash de 1 a max_nodes conceptos clave de un documento y los conecta al grafo."""
+    import re
+    from . import data, skills
+    from .textutil import norm
+
+    snippet = text.strip()
+    if not snippet:
+        return None
+
+    g = data.graph()
+    by_id = data.node_by_id()
+    valid_domains = list(g["domains"].keys())
+    valid_relations = list(g["relations"].keys())
+
+    # Seleccionar nodos relevantes del grafo existente + representantes por dominio
+    sem_hits = skills.vector_search_indexer(snippet[:4000], k=18)
+    cand_ids: list[str] = [h["id"] for h in sem_hits if h["id"] in by_id]
+    for dom in valid_domains:
+        dom_nodes = [n["id"] for n in g["nodes"] if n["domain"] == dom]
+        for nid in dom_nodes[:3]:
+            if nid not in cand_ids:
+                cand_ids.append(nid)
+
+    catalog_lines = [
+        f"- {nid}: {by_id[nid]['label']} (domain: {by_id[nid]['domain']})"
+        for nid in cand_ids[:36]
+    ]
+    catalog_str = "\n".join(catalog_lines)
+
+    system_prompt = f"""Eres GraphArchitect_Agent de Polymath Graph.
+Tu tarea es leer el documento o texto del usuario, extraer entre 1 y {max_nodes} conceptos clave NUEVOS que merezcan integrarse como nodos en el Grafo de Conocimiento Interdisciplinario, y conectarlos con los nodos ya existentes.
+
+REGLAS DE DISEÑO DEL GRAFO:
+1. "topic": Nombre corto y preciso del concepto en español (2 a 5 palabras). No repitas literalmente un nodo ya existente en el catálogo.
+2. "domain": Debe ser exactamente uno de: {valid_domains}.
+3. "complexity": Nivel de complejidad de 1 (básico) a 5 (avanzado).
+4. "year": Año aproximado de origen o relevancia del concepto (número entero, ej. 1950, 2024).
+5. "authors": Lista de 1 a 3 autores, investigadores o pensadores asociados al concepto en el texto (si no se mencionan explícitamente, infiere los referentes históricos del tema o usa ["Autor del documento"]).
+6. "summary": Explicación sintética, clara y pedagógica en español (1 o 2 oraciones) que resuma la idea central.
+7. "connections": Lista de 2 a 4 conexiones hacia IDs existentes del catálogo inferior. Al menos UNA conexión debe ser hacia un nodo de otro "domain" distinto (enlace interdisciplinario).
+   Cada conexión tiene:
+   - "target": ID exacto del nodo existente en el catálogo.
+   - "relation": Uno de {valid_relations}.
+
+NODOS EXISTENTES EN EL GRAFO PARA CONECTAR:
+{catalog_str}
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{{
+  "concepts": [
+    {{
+      "topic": "Nombre del concepto",
+      "domain": "science",
+      "complexity": 3,
+      "year": 2023,
+      "authors": ["Autor 1"],
+      "summary": "Síntesis clara del concepto y su relevancia interdisciplinaria.",
+      "connections": [
+        {{"target": "information_theory", "relation": "extends"}},
+        {{"target": "critical_thinking", "relation": "applies"}}
+      ]
+    }}
+  ]
+}}
+"""
+
+    user_prompt = f"""Documento del estudiante / investigador:
+\"\"\"{snippet[:15000]}\"\"\"
+
+Extrae hasta {max_nodes} conceptos centrales y sus conexiones interdisciplinarias en JSON:
+"""
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.25)
+    if not isinstance(result, dict) or not isinstance(result.get("concepts"), list):
+        return None
+
+    nodes_out: list[dict] = []
+    links_out: list[dict] = []
+    used_ids: set[str] = set(by_id.keys())
+
+    for item in result["concepts"][:max_nodes]:
+        if not isinstance(item, dict) or not item.get("topic"):
+            continue
+        topic = str(item["topic"]).strip()
+        domain = str(item.get("domain", "science")).strip()
+        if domain not in valid_domains:
+            domain = "science"
+
+        raw_id = re.sub(r"[^a-z0-9]+", "_", norm(topic)).strip("_")
+        if not raw_id:
+            continue
+        node_id = raw_id if raw_id not in used_ids else f"{raw_id}_custom"
+        if node_id in used_ids:
+            continue
+
+        try:
+            complexity = max(1, min(5, int(item.get("complexity", 3))))
+        except (ValueError, TypeError):
+            complexity = 3
+
+        try:
+            year = int(item.get("year", 2025))
+        except (ValueError, TypeError):
+            year = 2025
+
+        authors_raw = item.get("authors")
+        if isinstance(authors_raw, list) and authors_raw:
+            authors = [str(a).strip() for a in authors_raw if str(a).strip()][:3]
+        else:
+            authors = ["Autor del documento"]
+        if not authors:
+            authors = ["Autor del documento"]
+
+        summary = str(item.get("summary", "")).strip() or f"Concepto extraído sobre {topic}."
+
+        valid_conns: list[dict] = []
+        seen_targets: set[str] = set()
+        for c in item.get("connections", []):
+            if isinstance(c, dict):
+                tgt = str(c.get("target", "")).strip()
+                rel = str(c.get("relation", "influences")).strip()
+                if tgt in by_id and tgt not in seen_targets:
+                    if rel not in valid_relations:
+                        rel = "influences"
+                    valid_conns.append({"source": node_id, "target": tgt, "relation": rel})
+                    seen_targets.add(tgt)
+
+        # Garantizar al menos 2 enlaces y 1 enlace interdisciplinario
+        if len(valid_conns) < 2:
+            extra_hits = skills.vector_search_indexer(f"{topic} {summary}", k=4)
+            for h in extra_hits:
+                hid = h["id"]
+                if hid in by_id and hid not in seen_targets:
+                    valid_conns.append({"source": node_id, "target": hid, "relation": "influences"})
+                    seen_targets.add(hid)
+                    if len(valid_conns) >= 3:
+                        break
+
+        if not any(by_id[c["target"]]["domain"] != domain for c in valid_conns):
+            cross_fallback = "critical_thinking" if domain != "philosophy" else "scientific_method"
+            if cross_fallback not in seen_targets and cross_fallback in by_id:
+                valid_conns.append({"source": node_id, "target": cross_fallback, "relation": "applies"})
+                seen_targets.add(cross_fallback)
+
+        node_obj = {
+            "id": node_id,
+            "label": topic,
+            "domain": domain,
+            "complexity": complexity,
+            "year": year,
+            "authors": authors,
+            "summary": summary,
+            "custom": True,
+        }
+        used_ids.add(node_id)
+        nodes_out.append(node_obj)
+        links_out.extend(valid_conns[:4])
+
+    if not nodes_out:
+        return None
+
+    cfg = get_llm_config()
+    return {
+        "nodes": nodes_out,
+        "links": links_out,
+        "engine": f"gemini ({cfg['model']})",
+    }
+

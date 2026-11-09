@@ -46,6 +46,73 @@ def graph_node_builder(topic: str, domain: str, connected_nodes: list, *, comple
 
 
 @skill
+def extract_graph_nodes_from_text(text: str, max_nodes: int = 3) -> dict:
+    """Extrae heurísticamente de 1 a max_nodes conceptos clave de un documento y los enlaza al grafo."""
+    by_id = data.node_by_id()
+    paragraphs = [p.strip() for p in re.split(r"\n{2,}", text.strip()) if len(p.strip()) >= 25]
+    if not paragraphs:
+        paragraphs = [s.strip() for s in split_sentences(text) if len(s.strip()) >= 15]
+    if not paragraphs:
+        paragraphs = [text.strip()]
+
+    nodes_out: list[dict] = []
+    links_out: list[dict] = []
+    seen_ids: set[str] = set(by_id.keys())
+
+    fallback_hubs = ["critical_thinking", "scientific_method", "information_theory", "epistemology"]
+
+    for idx, para in enumerate(paragraphs[: max_nodes * 2]):
+        if len(nodes_out) >= max_nodes:
+            break
+        sents = split_sentences(para)
+        first_sent = sents[0] if sents else para[:140]
+        toks = [w for w in terms(first_sent) if len(w) >= 4]
+        if not toks:
+            toks = [w for w in terms(para) if len(w) >= 4]
+        if not toks:
+            continue
+
+        raw_topic = " ".join(toks[:3]).capitalize()
+        cand_id = re.sub(r"[^a-z0-9]+", "_", norm(raw_topic)).strip("_")
+        if not cand_id or cand_id in seen_ids:
+            raw_topic = f"{raw_topic} (Concepto {idx + 1})"
+            cand_id = re.sub(r"[^a-z0-9]+", "_", norm(raw_topic)).strip("_")
+        if cand_id in seen_ids:
+            continue
+
+        hits = vector_search_indexer(para, k=5)
+        conn_ids = [h["id"] for h in hits if h["id"] in by_id]
+        for hub in fallback_hubs:
+            if len(conn_ids) < 3 and hub not in conn_ids and hub in by_id:
+                conn_ids.append(hub)
+
+        primary_domain = by_id[conn_ids[0]]["domain"] if conn_ids else "science"
+        if not any(by_id[c]["domain"] != primary_domain for c in conn_ids):
+            cross_hub = "critical_thinking" if primary_domain != "philosophy" else "scientific_method"
+            if cross_hub not in conn_ids:
+                conn_ids.append(cross_hub)
+
+        conn_ids = conn_ids[:3]
+        summary = first_sent if len(first_sent) <= 220 else first_sent[:217] + "..."
+        built = graph_node_builder(
+            topic=raw_topic,
+            domain=primary_domain,
+            connected_nodes=conn_ids,
+            complexity=3,
+            authors=["Documento del usuario"],
+            summary=summary,
+            year=2026,
+        )
+        node_obj = {**built["node"], "custom": True}
+        seen_ids.add(node_obj["id"])
+        nodes_out.append(node_obj)
+        links_out.extend(built["links"])
+
+    return {"nodes": nodes_out, "links": links_out, "engine": "heuristic"}
+
+
+
+@skill
 def semantic_link_evaluator(graph: dict | None = None) -> list[str]:
     """Valida calidad del grafo: metadatos, grado mínimo y enlaces cruzados entre disciplinas."""
     g = graph or data.graph()

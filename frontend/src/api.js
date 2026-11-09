@@ -1,8 +1,9 @@
 // Cliente API para comunicación con el backend FastAPI y fallback a motores locales
 import { evaluate, hint, studyPlan } from './engines/socratic.js';
-import { answerFromDocument } from './engines/rag.js';
+import { answerFromDocument, buildIndex, search, terms } from './engines/rag.js';
 import { explain } from './engines/explain.js';
 import { analyze } from './engines/fallacy.js';
+import { graph } from './state.js';
 
 let _llmStatus = null;
 let _statusPromise = null;
@@ -227,3 +228,55 @@ export async function auditFallacies(text, useLlm = true) {
     engine: 'heuristic',
   };
 }
+
+export async function extractGraphNodesFromText(text, maxNodes = 3, useLlm = true) {
+  try {
+    const res = await fetch('/api/graph/extract-from-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        max_nodes: maxNodes,
+        use_llm: useLlm,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback local
+  }
+
+  // Fallback cliente si el backend no está disponible
+  const idx = buildIndex(graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.summary}` })));
+  const paras = text.split(/\n{2,}/).map((p) => p.trim()).filter((p) => p.length >= 20);
+  const chunks = paras.length ? paras.slice(0, maxNodes) : [text.trim()];
+  const nodes = [];
+  const links = [];
+
+  chunks.forEach((chunk, i) => {
+    const toks = terms(chunk).filter((w) => w.length >= 4);
+    if (!toks.length) return;
+    const label = toks.slice(0, 3).join(' ').replace(/^./, (c) => c.toUpperCase());
+    const id = 'custom_' + toks.slice(0, 3).join('_') + '_' + (i + 1);
+    const hits = search(idx, chunk, 3).map((h) => h.doc.id);
+    const conn = hits.length ? hits : ['critical_thinking', 'scientific_method'];
+    if (!conn.includes('critical_thinking')) conn.push('critical_thinking');
+    nodes.push({
+      id,
+      label,
+      domain: 'science',
+      complexity: 3,
+      year: 2026,
+      authors: ['Documento del usuario'],
+      summary: chunk.slice(0, 180) + (chunk.length > 180 ? '…' : ''),
+      custom: true,
+    });
+    conn.slice(0, 3).forEach((target) => {
+      links.push({ source: id, target, relation: 'influences' });
+    });
+  });
+
+  return { nodes, links, engine: 'local' };
+}
+
