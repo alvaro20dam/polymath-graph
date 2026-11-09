@@ -1,9 +1,10 @@
 // AI Paper & Text Explainer: explicación in-context por niveles + chat con el documento (RAG TF-IDF + Gemini)
-import { el, nodeChip, graph, nodeById, integrateGraphNodes, openNode } from '../state.js';
+import { el, nodeChip, graph, nodeById, integrateGraphNodes, openNode, flashcards, navigate } from '../state.js';
 import { explain, LEVELS } from '../engines/explain.js';
 import { buildIndex, search, chunkText, answerFromDocument, terms } from '../engines/rag.js';
 import { escapeHtml, cleanDocumentText, renderMarkdown } from '../engines/text.js';
-import { extractDocumentText, queryDocumentRag, explainDocumentText, extractGraphNodesFromText, getLlmStatus } from '../api.js';
+import { extractDocumentText, queryDocumentRag, explainDocumentText, extractGraphNodesFromText, generateFlashcards, getLlmStatus } from '../api.js';
+import { newCard } from '../engines/srs.js';
 import samples from '@data/samples.json';
 
 let nodeIndex = buildIndex(graph.nodes.map((n) => ({ id: n.id, text: `${n.label} ${n.label} ${n.authors.join(' ')} ${n.summary}` })));
@@ -17,6 +18,7 @@ export function mount(root) {
   const fileInput = el('input', { type: 'file', accept: '.pdf,.txt,.md,text/plain,application/pdf', hidden: true });
   const editBtn = el('button', { class: 'btn small', onclick: () => toggleEdit() }, '✏ Pegar / editar texto');
   const graphBtn = el('button', { class: 'btn small', style: 'border-color:var(--accent);color:var(--accent);font-weight:600', onclick: () => integrateToGraph() }, '🌐 Integrar conceptos al Grafo');
+  const cardsBtn = el('button', { class: 'btn small', style: 'border-color:var(--good);color:var(--good);font-weight:600', title: 'Genera tarjetas de repaso espaciado (Anki) a partir del documento', onclick: () => createFlashcards() }, '🗂 Crear flashcards');
   const levelCtl = segControl(Object.entries(LEVELS), st.level, (v) => { st.level = v; refresh(); });
   const langCtl = segControl([['es', 'Español'], ['en', 'English']], st.lang, (v) => { st.lang = v; refresh(); });
 
@@ -50,6 +52,7 @@ export function mount(root) {
       editBtn,
       el('button', { class: 'btn small primary', onclick: () => fileInput.click() }, '📄 Subir PDF o texto'),
       graphBtn,
+      cardsBtn,
       fileInput,
       el('span', { class: 'muted', style: 'font-size:.8rem' }, 'Selecciona texto o integra ideas al mapa.')),
     reader, editor);
@@ -119,6 +122,20 @@ export function mount(root) {
       explBox.append(el('div', { class: 'card' },
         el('h3', { style: 'display:flex;align-items:center;gap:.3rem;' }, '✨ Explicación (' + LEVELS[st.level] + ')'),
         el('div', { style: 'line-height:1.45;', html: renderMarkdown(r.ai_explanation) })));
+    }
+
+    const cardBack = r.ai_explanation || (r.termCards || r.term_cards || []).map((c) => `**${c.label}:** ${c.text}`).join('\n\n') || r.simplified || '';
+    if (cardBack) {
+      const front = text.length > 160 ? `Explica con tus palabras: «${text.slice(0, 160)}…»` : (text.split(/\s+/).length <= 5 ? `¿Qué significa **${text}**?` : `Explica con tus palabras: «${text}»`);
+      const saveBtn = el('button', { class: 'btn small', style: 'margin-bottom:.6rem', title: 'Añade esta explicación a tu mazo de repaso espaciado' }, '🗂 Guardar como tarjeta');
+      if (flashcards.has(front)) { saveBtn.disabled = true; saveBtn.textContent = '✓ Ya está en tu mazo'; }
+      saveBtn.addEventListener('click', () => {
+        const related = (r.related || r.related_nodes || []).filter((id) => nodeById.has(id)).slice(0, 2);
+        const added = flashcards.add([newCard({ front, back: cardBack, tags: ['explicador', st.level, ...related], source: 'explanation' })]);
+        saveBtn.disabled = true;
+        saveBtn.textContent = added.length ? '✓ Guardada en «🗂 Repaso»' : '✓ Ya está en tu mazo';
+      });
+      explBox.append(saveBtn);
     }
 
     const termCards = r.termCards || r.term_cards || [];
@@ -254,6 +271,89 @@ export function mount(root) {
 
     const names = res.nodes.map((n) => `**✦ ${n.label}**`).join(', ');
     addChat('tutor', `🌐 He integrado ${res.nodes.length} nuevo(s) nodo(s) al Grafo de Conocimiento a partir de tu lectura: ${names}. Puedes pulsar **«🚀 Ver en el Grafo Interactivo»** en el panel superior para explorar sus conexiones en vivo.`);
+  }
+
+  // ---------- flashcards (repaso espaciado) ----------
+  async function createFlashcards() {
+    const currentText = (st.editing ? editor.value : st.text).trim();
+    if (currentText.length < 40) {
+      alert('El documento es demasiado corto para generar tarjetas de estudio.');
+      return;
+    }
+    if (st.editing) toggleEdit();
+
+    cardsBtn.disabled = true;
+    const origLabel = cardsBtn.textContent;
+    cardsBtn.textContent = '⏳ Generando tarjetas…';
+    explBox.innerHTML = '';
+    explBox.append(el('div', { class: 'card', style: 'text-align:center;padding:1.4rem' },
+      el('div', { style: 'font-size:1.8rem;margin-bottom:.4rem' }, '🗂'),
+      el('p', { style: 'font-weight:600;margin-bottom:.25rem' }, 'Diseñando tarjetas de recuerdo activo…'),
+      el('p', { class: 'muted', style: 'font-size:.85rem' }, 'Una idea por tarjeta, preguntas precisas y respuestas breves (principios de Anki / SuperMemo).')));
+
+    let res;
+    try {
+      res = await generateFlashcards(currentText, { source: 'document', maxCards: 10, level: st.level, lang: st.lang });
+    } catch {
+      res = { cards: [], engine: 'error' };
+    } finally {
+      cardsBtn.disabled = false;
+      cardsBtn.textContent = origLabel;
+    }
+
+    explBox.innerHTML = '';
+    const cards = (res.cards || []).filter((c) => c && c.front && c.back);
+    if (!cards.length) {
+      explBox.append(el('div', { class: 'callout warn' }, 'No pude extraer tarjetas de este texto. Prueba con un fragmento con definiciones o explicaciones más extensas.'));
+      return;
+    }
+
+    const sem = search(nodeIndex, currentText.slice(0, 3000), 2).map((h) => h.doc.id);
+    const docTag = sampleSel.value !== 'custom' ? sampleSel.value : 'mi_documento';
+    const isAi = res.engine && res.engine.includes('gemini');
+    const checks = [];
+    const list = el('div');
+    cards.forEach((c, i) => {
+      const dup = flashcards.has(c.front);
+      const cb = el('input', { type: 'checkbox', 'aria-label': 'Incluir tarjeta ' + (i + 1) });
+      cb.checked = !dup;
+      cb.disabled = dup;
+      checks.push(cb);
+      list.append(el('label', { class: 'card fc-preview' + (dup ? ' dup' : '') },
+        el('div', { class: 'row', style: 'align-items:flex-start;gap:.55rem;flex-wrap:nowrap' },
+          cb,
+          el('div', { class: 'grow', style: 'min-width:0' },
+            el('div', { class: 'fc-preview-front', html: renderMarkdown(c.front) }),
+            el('div', { class: 'fc-preview-back', html: renderMarkdown(c.back) }),
+            el('small', { class: 'muted' }, dup ? 'Ya está en tu mazo' : (c.tags || []).map((t) => '#' + t).join(' '))))));
+    });
+
+    const saveBtn = el('button', { class: 'btn small primary' });
+    const syncLabel = () => {
+      const n = checks.filter((c) => c.checked).length;
+      saveBtn.textContent = `💾 Añadir ${n} al mazo`;
+      saveBtn.disabled = !n;
+    };
+    checks.forEach((cb) => cb.addEventListener('change', syncLabel));
+    syncLabel();
+    saveBtn.addEventListener('click', () => {
+      const chosen = cards.filter((_, i) => checks[i].checked);
+      const added = flashcards.add(chosen.map((c) => newCard({ front: c.front, back: c.back, tags: [...new Set([...(c.tags || []), docTag, ...sem])], source: 'document', kind: c.kind || 'qa' })));
+      saveBtn.disabled = true;
+      checks.forEach((cb) => { cb.disabled = true; });
+      saveBtn.textContent = `✓ ${added.length} tarjeta(s) añadidas`;
+      addChat('tutor', `🗂 Añadí **${added.length}** tarjeta(s) a tu mazo de repaso espaciado. Ábrelo en la pestaña **«🗂 Repaso»** para estudiarlas o exportarlas a Anki.`);
+    });
+
+    explBox.append(
+      el('div', { class: 'callout good', style: 'margin-bottom:.7rem' },
+        el('b', {}, `🗂 ${cards.length} tarjeta(s) propuestas `),
+        el('span', { class: 'muted', style: 'font-size:.82rem' }, isAi ? `(Generadas con ${res.engine})` : '(Motor local: glosario, definiciones y huecos)'),
+        el('div', { class: 'muted', style: 'font-size:.8rem;margin-top:.2rem' }, 'Desmarca las que no quieras conservar.')),
+      el('div', { class: 'row', style: 'margin-bottom:.6rem;gap:.4rem' },
+        saveBtn,
+        el('button', { class: 'btn small', onclick: () => navigate('review') }, '▶ Ir a Repaso')),
+      list);
   }
 
   // ---------- chat con documento ----------

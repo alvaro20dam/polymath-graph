@@ -13,6 +13,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 from dotenv import load_dotenv
@@ -978,4 +979,87 @@ Extrae hasta {max_nodes} conceptos centrales y sus conexiones interdisciplinaria
         "links": links_out,
         "engine": f"gemini ({cfg['model']})",
     }
+
+
+async def generate_flashcards_with_llm(
+    text: str,
+    source: str = "document",
+    max_cards: int = 8,
+    level: str = "intermediate",
+    lang: str = "es",
+) -> dict | None:
+    """Genera tarjetas de estudio estilo Anki (recuerdo activo, atómicas y de alto impacto pedagógico) con Gemini."""
+    snippet = text.strip()
+    if not snippet:
+        return None
+
+    target_lang = "español" if lang == "es" else "inglés"
+    system_prompt = f"""Eres MemoryArchitect_Agent de Polymath Graph, especialista en ciencia del aprendizaje, repetición espaciada y diseño de tarjetas estilo Anki (principios de Piotr Woźniak / SuperMemo).
+
+Tu tarea es analizar el texto (documento, explicación o sesión socrática) y extraer hasta {max_cards} tarjetas de estudio excepcionales en {target_lang}.
+
+PRINCIPIOS DE DISEÑO DE FLASHCARDS:
+1. "PRINCIPIO DE ATOMICIDAD": Una sola idea, hecho o relación por tarjeta. Nunca hagas preguntas dobles ni respuestas de párrafos interminables.
+2. "RECUERDO ACTIVO": El anverso ("front") debe ser un detonante cognitivo claro (pregunta directa, escenario breve o «¿Por qué...?»).
+3. "RESPUESTA CLARA Y MEMORABLE": El reverso ("back") debe comenzar con la respuesta directa en negrita, seguida opcionalmente de una explicación concisa o fórmula (1 a 3 líneas).
+4. "TIPOS DE TARJETAS RECOMENDADAS":
+   - Conceptos centrales y definiciones operativas.
+   - Contrastes y distinciones sutiles (ej: sensibilidad vs. probabilidad a posteriori).
+   - Errores conceptuales comunes (misconceptions) y cómo corregirlos.
+   - Conexiones causa-efecto o teoremas fundamentales.
+5. "tags": 1 a 3 etiquetas cortas en minúsculas (ej: ["bayes", "probabilidad", "tasa_base"]).
+6. "kind": "qa" (pregunta/respuesta) o "cloze" (completar espacio).
+
+Nivel objetivo: {level}.
+
+DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
+{{
+  "cards": [
+    {{
+      "front": "¿Qué es la tasa base (prior) y cómo afecta al resultado de una prueba médica?",
+      "back": "**Es la probabilidad previa de estar enfermo antes del test.**\\n\\nSi la enfermedad es muy rara (ej. 1%), incluso con un test del 90% de precisión la gran mayoría de positivos serán falsos positivos.",
+      "tags": ["bayes", "probabilidad", "tasa_base"],
+      "kind": "qa"
+    }}
+  ]
+}}
+"""
+
+    user_prompt = f"""Contenido fuente ({source}):
+\"\"\"{snippet[:15000]}\"\"\"
+
+Extrae hasta {max_cards} tarjetas de estudio atómicas en JSON:
+"""
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.25)
+    if not isinstance(result, dict) or not isinstance(result.get("cards"), list):
+        return None
+
+    valid_cards = []
+    for c in result["cards"][:max_cards]:
+        if not isinstance(c, dict):
+            continue
+        front = str(c.get("front", "")).strip()
+        back = str(c.get("back", "")).strip()
+        if not front or not back:
+            continue
+        tags_raw = c.get("tags") or []
+        tags = [re.sub(r"[^\w-]", "", str(t).lower()) for t in tags_raw if str(t).strip()][:4]
+        kind = "cloze" if c.get("kind") == "cloze" else "qa"
+        valid_cards.append({
+            "front": front,
+            "back": back,
+            "tags": tags,
+            "kind": kind,
+        })
+
+    if not valid_cards:
+        return None
+
+    cfg = get_llm_config()
+    return {
+        "cards": valid_cards,
+        "engine": f"gemini ({cfg['model']})",
+    }
+
 

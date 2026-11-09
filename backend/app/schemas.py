@@ -81,3 +81,13 @@ class GraphExtractRequest(BaseModel):
     max_nodes: int = Field(default=3, ge=1, le=5)
     use_llm: bool = True
 
+
+class FlashcardRequest(BaseModel):
+    text: str = Field(min_length=10, max_length=50000)
+    source: Literal["document", "socratic", "explanation", "general"] = "document"
+    max_cards: int = Field(default=8, ge=1, le=20)
+    level: Level = "intermediate"
+    lang: Literal["es", "en"] = "es"
+    use_llm: bool = True
+
+

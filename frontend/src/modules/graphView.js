@@ -1,6 +1,7 @@
 // FrontendUIX_Agent · skill: d3_graph_renderer
 import * as d3 from 'd3';
-import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus, removeCustomNode, clearAllCustomNodes } from '../state.js';
+import { graph, nodeById, el, nodeChip, openNode, navigate, progress, bus, removeCustomNode, clearAllCustomNodes, flashcards } from '../state.js';
+import { newCard } from '../engines/srs.js';
 import { buildIndex, search } from '../engines/rag.js';
 import { PROBLEMS } from '../engines/socratic.js';
 import timelines from '@data/timelines.json';
@@ -467,6 +468,23 @@ export function mount(root) {
     if (LOGIC_FOR[id]) actions.push(el('button', { class: 'btn small', onclick: () => navigate('logic', { sub: LOGIC_FOR[id] }) }, '⚖ Lógica'));
     timelines.scenarios.filter((s) => s.theme === id).forEach((s) => actions.push(el('button', { class: 'btn small', onclick: () => navigate('timeline', { scenario: s.id }) }, '⏳ ' + s.title)));
     actions.push(el('button', { class: 'btn small', onclick: () => navigate('explainer', { text: `${n.label}. ${n.summary}` }) }, '📖 Explicar'));
+    const cardFront = `¿Qué es **${n.label}** y por qué importa?`;
+    const cardBtn = el('button', { class: 'btn small', title: 'Añadir este concepto a tu mazo de repaso espaciado' }, flashcards.has(cardFront) ? '✓ En tu mazo' : '🗂 Tarjeta');
+    cardBtn.disabled = flashcards.has(cardFront);
+    cardBtn.addEventListener('click', () => {
+      const conns = graph.links.filter((l) => idOf(l.source) === id).slice(0, 3)
+        .map((l) => `${graph.relations[l.relation] || 'influye en'} ${nodeById.get(idOf(l.target))?.label || idOf(l.target)}`);
+      const yr = n.year == null ? '' : n.year < 0 ? `${-n.year} a.C.` : `${n.year}`;
+      const back = [
+        n.summary,
+        `*${[(n.authors || []).join(', '), yr].filter(Boolean).join(' · ')}*`,
+        conns.length ? `**Conexiones:** ${conns.join('; ')}.` : '',
+      ].filter((s) => s && s !== '**').join('\n\n');
+      flashcards.add([newCard({ front: cardFront, back, tags: ['grafo', n.domain, id], source: 'graph' })]);
+      cardBtn.disabled = true;
+      cardBtn.textContent = '✓ En tu mazo';
+    });
+    actions.push(cardBtn);
     if (n.custom) {
       actions.push(el('button', { class: 'btn small', style: 'border-color:var(--bad);color:var(--bad)', onclick: () => { removeCustomNode(id); clearSelection(); } }, '🗑 Eliminar nodo'));
     }

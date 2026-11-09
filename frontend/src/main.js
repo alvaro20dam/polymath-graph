@@ -1,5 +1,6 @@
 import './styles.css';
-import { el, onNavigate } from './state.js';
+import { el, onNavigate, bus, flashcards } from './state.js';
+import { deckStats, SRS_CONFIG } from './engines/srs.js';
 
 const TABS = [
   { id: 'graph', label: 'Grafo', icon: '◉', load: () => import('./modules/graphView.js') },
@@ -8,6 +9,7 @@ const TABS = [
   { id: 'lab', label: 'Laboratorio', icon: '🧪', load: () => import('./modules/lab.js') },
   { id: 'logic', label: 'Lógica y falacias', icon: '⚖', load: () => import('./modules/logicView.js') },
   { id: 'timeline', label: 'Líneas de tiempo', icon: '⏳', load: () => import('./modules/timeline.js') },
+  { id: 'review', label: 'Repaso', icon: '🗂', load: () => import('./modules/flashcards.js') },
 ];
 
 const app = document.getElementById('app');
@@ -19,6 +21,18 @@ TABS.forEach((t) => {
   const btn = el('a', { class: 'tab', href: `#/${t.id}`, 'data-tab': t.id }, el('span', { class: 'tab-icon', 'aria-hidden': 'true' }, t.icon), el('span', { class: 'tab-label' }, t.label));
   tabsEl.append(btn);
 });
+
+// Contador de tarjetas pendientes en la pestaña «Repaso»
+const reviewBadge = el('span', { class: 'tab-badge', hidden: true, title: 'Tarjetas pendientes de repaso hoy' });
+tabsEl.querySelector('[data-tab="review"]')?.append(reviewBadge);
+function updateReviewBadge() {
+  const s = deckStats(flashcards.all(), Date.now(), Math.max(0, SRS_CONFIG.newPerDay - flashcards.daily().newSeen));
+  reviewBadge.textContent = s.dueTotal > 99 ? '99+' : String(s.dueTotal);
+  reviewBadge.hidden = !s.dueTotal;
+}
+bus.addEventListener('flashcards', updateReviewBadge);
+updateReviewBadge();
+setInterval(updateReviewBadge, 60 * 1000);
 
 async function show(tabId, params = {}) {
   const tab = TABS.find((t) => t.id === tabId) ?? TABS[0];

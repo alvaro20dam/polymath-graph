@@ -184,3 +184,40 @@ def test_graph_extract_from_text_endpoint():
     assert len(data["links"]) >= 2
 
 
+def test_flashcards_generate_endpoint():
+    doc_text = (
+        "La entropía es la medida de la incertidumbre o sorpresa en una fuente de información.\n\n"
+        "El descenso del gradiente es un algoritmo de optimización que ajusta parámetros en la dirección contraria a las derivadas parciales."
+    )
+    # 1. Fallback heurístico
+    r_local = client.post("/api/flashcards/generate", json={"text": doc_text, "max_cards": 4, "use_llm": False})
+    assert r_local.status_code == 200
+    d_local = r_local.json()
+    assert d_local["engine"] == "heuristic"
+    assert len(d_local["cards"]) >= 1
+    assert "front" in d_local["cards"][0] and "back" in d_local["cards"][0]
+
+    # 2. Con LLM mocked
+    mock_cards = {
+        "cards": [
+            {
+                "front": "¿Qué mide la entropía de Shannon?",
+                "back": "**La incertidumbre media o sorpresa de una fuente.**",
+                "tags": ["entropia", "informacion"],
+                "kind": "qa",
+            }
+        ],
+        "engine": "gemini (gemini-3.5-flash)",
+    }
+    with patch("app.llm.generate_flashcards_with_llm", new_callable=AsyncMock) as mock_fn, \
+         patch("app.llm.get_llm_config", return_value={"enabled": True, "model": "gemini-3.5-flash"}):
+        mock_fn.return_value = mock_cards
+        r_ai = client.post("/api/flashcards/generate", json={"text": doc_text, "max_cards": 2, "use_llm": True})
+        assert r_ai.status_code == 200
+        d_ai = r_ai.json()
+        assert d_ai["engine"] == "gemini (gemini-3.5-flash)"
+        assert len(d_ai["cards"]) == 1
+        assert "entropía" in d_ai["cards"][0]["front"]
+
+
+

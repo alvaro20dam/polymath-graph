@@ -198,3 +198,78 @@ describe('gestión del Grafo Vivo y limpieza de nodos', () => {
     expect(stateGraph.nodes.length).toBe(initialCount);
   });
 });
+
+describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
+  it('gestiona ciclo de vida SM-2: new -> learning -> review -> ease', async () => {
+    const { newCard, review, formatInterval, toAnkiCsv } = await import('../src/engines/srs.js');
+    const now = 1000000000000;
+    const card = newCard({ front: '¿Qué es el prior?', back: 'La creencia inicial P(A)', tags: ['bayes'] }, now);
+
+    expect(card.state).toBe('new');
+    expect(card.ease).toBe(2.5);
+
+    // 1. Primer acierto (Good / Bien = 3) en paso de aprendizaje (1 min -> 10 min)
+    const step1 = review(card, 3, now);
+    expect(step1.state).toBe('learning');
+    expect(step1.step).toBe(1);
+    expect(step1.due).toBe(now + 10 * 60 * 1000);
+
+    // 2. Graduación a review
+    const grad = review(step1, 3, step1.due);
+    expect(grad.state).toBe('review');
+    expect(grad.interval).toBe(1); // 1 día
+
+    // 3. Repaso exitoso tras 1 día: multiplica por facilidad (ease 2.5)
+    const day2 = now + 1 * 24 * 3600 * 1000;
+    const rev2 = review(grad, 3, day2);
+    expect(rev2.state).toBe('review');
+    expect(rev2.interval).toBeGreaterThanOrEqual(2);
+
+    // 4. Formateador de intervalos legibles
+    expect(formatInterval(30 * 1000)).toBe('<1 min');
+    expect(formatInterval(10 * 60 * 1000)).toBe('10 min');
+    expect(formatInterval(3 * 24 * 3600 * 1000)).toBe('3 d');
+
+    // 5. Exportación CSV compatible con Anki
+    const csv = toAnkiCsv([rev2]);
+    expect(csv).toContain('#deck:Polymath Graph');
+    expect(csv).toContain('¿Qué es el prior?');
+    expect(csv).toContain('polymath');
+  });
+
+  it('generador local extrae tarjetas de glosario y definiciones', async () => {
+    const { localFlashcards, socraticCards } = await import('../src/engines/cardgen.js');
+    const text = 'La entropía mide la incertidumbre media de una fuente de información según Shannon.\n\nEl descenso del gradiente es un método de optimización iterativo.';
+    const cards = localFlashcards(text, { maxCards: 5 });
+    expect(cards.length).toBeGreaterThanOrEqual(1);
+    expect(cards[0]).toHaveProperty('front');
+    expect(cards[0]).toHaveProperty('back');
+
+    // Socratic cards
+    const { getProblem } = await import('../src/engines/socratic.js');
+    const prob = getProblem('bayes_test');
+    const soc = socraticCards(prob, { hintsUsed: { base_rate: 2 }, mastered: ['base_rate'] });
+    expect(soc.length).toBeGreaterThanOrEqual(3);
+    expect(soc[0].tags).toContain('dificil');
+  });
+
+  it('almacenamiento y desduplicación en mazo de flashcards', async () => {
+    const { flashcards } = await import('../src/state.js');
+    const { newCard } = await import('../src/engines/srs.js');
+
+    flashcards.clear();
+    expect(flashcards.all()).toHaveLength(0);
+
+    const c1 = newCard({ front: 'Pregunta única A', back: 'Respuesta A' });
+    const c2 = newCard({ front: 'Pregunta única A', back: 'Respuesta duplicada' });
+    const c3 = newCard({ front: 'Pregunta única B', back: 'Respuesta B' });
+
+    const added = flashcards.add([c1, c2, c3]);
+    expect(added).toHaveLength(2); // c2 es duplicado
+    expect(flashcards.has('Pregunta única A')).toBe(true);
+
+    flashcards.remove(c1.id);
+    expect(flashcards.has('Pregunta única A')).toBe(false);
+    expect(flashcards.all()).toHaveLength(1);
+  });
+});

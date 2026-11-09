@@ -528,3 +528,57 @@ def explainpaper_highlighter(selected_text: str, context: str = "", target_level
         parts.append(source[pos:])
         simplified = "".join(parts)
     return {"source": source, "terms": cards, "jargon": jargon, "simplified": simplified, "related": [c["node"] for c in cards]}
+
+
+@skill
+def generate_flashcards(text: str, max_cards: int = 8, level: str = "intermediate", lang: str = "es") -> dict:
+    """Genera tarjetas de estudio (pregunta/respuesta) deterministas a partir de términos del glosario y definiciones."""
+    snippet = text.strip()
+    if not snippet:
+        return {"cards": [], "engine": "heuristic"}
+
+    cards = []
+    seen = set()
+    n = norm(snippet)
+
+    # 1. Términos del glosario presentes
+    for t, regs in _TERMS:
+        for r in regs:
+            if r.search(n):
+                lbl = t["aliases"][0]
+                front = f"¿Qué es **{lbl}**?" if lang == "es" else f"What is **{lbl}**?"
+                back = t.get(lang, {}).get(level) or t.get("es", {}).get(level, "")
+                if back and front not in seen:
+                    seen.add(front)
+                    cards.append({"front": front, "back": back, "tags": ["glosario", t["node"]], "kind": "qa"})
+                break
+
+    # 2. Oraciones definitorias («X es/son...»)
+    def_re = re.compile(r"^(.{3,60}?)\s+(es|son|era|fue|se define como|se denomina|consiste en|significa|mide|describe)\s+(.{15,})$", re.I)
+    bad_subj = re.compile(r"^(esto|eso|esta|este|ello|aquello|lo que|el resultado|la respuesta)$", re.I)
+    for sent in split_sentences(snippet):
+        m = def_re.match(sent.strip())
+        if m:
+            subj = re.sub(r"^(el|la|los|las|un|una)\s+", "", m.group(1).strip(), flags=re.I)
+            if len(subj.split()) <= 6 and not bad_subj.match(subj) and len(subj) >= 3:
+                verb = m.group(2).lower()
+                q = f"¿Qué {verb} **{subj}**?" if " " not in verb else f"¿Cómo se define **{subj}**?"
+                if q not in seen:
+                    seen.add(q)
+                    cards.append({"front": q, "back": sent.strip(), "tags": ["definicion"], "kind": "qa"})
+
+    # 3. Cloze (hueco en oraciones informativas)
+    if len(cards) < max_cards:
+        for sent in split_sentences(snippet):
+            if 50 <= len(sent) <= 220:
+                words = re.findall(r"\b[A-Za-zÁÉÍÓÚáéíóúñÑ0-9]{5,}\b", sent)
+                if words:
+                    best = max(words, key=len)
+                    cloze_front = re.sub(rf"\b{re.escape(best)}\b", "_____", sent, count=1)
+                    if cloze_front != sent and cloze_front not in seen:
+                        seen.add(cloze_front)
+                        cards.append({"front": f"Completa: {cloze_front}", "back": f"**{best}**\n\n{sent}", "tags": ["cloze"], "kind": "cloze"})
+                        if len(cards) >= max_cards:
+                            break
+
+    return {"cards": cards[:max_cards], "engine": "heuristic"}

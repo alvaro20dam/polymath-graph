@@ -188,6 +188,74 @@ export const progress = {
   reset() { data = { problems: {}, quiz: { right: 0, total: 0 }, visited: [] }; save(); emit('progress'); },
 };
 
+// Mazo de flashcards con repetición espaciada (solo localStorage)
+const FC_KEY = 'polymath-graph.flashcards.v1';
+function loadDeck() {
+  try {
+    const d = JSON.parse(localStorage.getItem(FC_KEY));
+    if (d && Array.isArray(d.cards)) return { cards: d.cards, daily: d.daily || { date: '', newSeen: 0, reviews: 0 } };
+  } catch { /* noop */ }
+  return { cards: [], daily: { date: '', newSeen: 0, reviews: 0 } };
+}
+let deck = loadDeck();
+const saveDeck = () => {
+  try { localStorage.setItem(FC_KEY, JSON.stringify(deck)); } catch { /* modo privado */ }
+};
+const fcKey = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const dayStr = (now = Date.now()) => {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+export const flashcards = {
+  all: () => deck.cards,
+  get: (id) => deck.cards.find((c) => c.id === id),
+  has: (front) => deck.cards.some((c) => fcKey(c.front) === fcKey(front)),
+  /** Añade tarjetas ya construidas (newCard) evitando duplicados por anverso. Devuelve las añadidas. */
+  add(cards) {
+    const keys = new Set(deck.cards.map((c) => fcKey(c.front)));
+    const added = [];
+    cards.forEach((c) => {
+      const k = fcKey(c.front);
+      if (!k || !c.back || keys.has(k)) return;
+      keys.add(k);
+      deck.cards.push(c);
+      added.push(c);
+    });
+    if (added.length) { saveDeck(); emit('flashcards', { added: added.length }); }
+    return added;
+  },
+  update(card) {
+    const i = deck.cards.findIndex((c) => c.id === card.id);
+    if (i === -1) return;
+    deck.cards[i] = card;
+    saveDeck();
+    emit('flashcards', { updated: card.id });
+  },
+  remove(id) {
+    const before = deck.cards.length;
+    deck.cards = deck.cards.filter((c) => c.id !== id);
+    if (deck.cards.length !== before) { saveDeck(); emit('flashcards', { removed: id }); }
+  },
+  clear() {
+    deck = { cards: [], daily: { date: '', newSeen: 0, reviews: 0 } };
+    saveDeck();
+    emit('flashcards', { cleared: true });
+  },
+  /** Contadores del día: nuevas vistas y repasos (se reinician al cambiar de fecha). */
+  daily(now = Date.now()) {
+    const today = dayStr(now);
+    if (deck.daily.date !== today) deck.daily = { date: today, newSeen: 0, reviews: 0 };
+    return deck.daily;
+  },
+  recordReview(wasNew, now = Date.now()) {
+    const d = flashcards.daily(now);
+    d.reviews += 1;
+    if (wasNew) d.newSeen += 1;
+    saveDeck();
+  },
+};
+
 // Navegación entre módulos
 const navHandlers = [];
 export const onNavigate = (fn) => navHandlers.push(fn);

@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, llm, skills
-from .schemas import (ExplainRequest, FallacyRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
+from .schemas import (ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -317,6 +317,17 @@ async def rag(req: RagRequest) -> dict:
     res = skills.document_qa(req.text, req.question, req.k)
     res["engine"] = "heuristic"
     return res
+
+
+@app.post(f"{api}/flashcards/generate")
+async def flashcards_generate(req: FlashcardRequest) -> dict:
+    """Genera tarjetas de estudio estilo Anki con IA (Gemini Flash) o fallback heurístico."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.generate_flashcards_with_llm(req.text, req.source, req.max_cards, req.level, req.lang)
+        if res is not None:
+            return res
+    return skills.generate_flashcards(req.text, req.max_cards, req.level, req.lang)
+
 
 
 # ---------------- Frontend estático (opcional) ----------------

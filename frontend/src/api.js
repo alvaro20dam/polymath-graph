@@ -3,6 +3,7 @@ import { evaluate, hint, studyPlan } from './engines/socratic.js';
 import { answerFromDocument, buildIndex, search, terms } from './engines/rag.js';
 import { explain } from './engines/explain.js';
 import { analyze } from './engines/fallacy.js';
+import { localFlashcards } from './engines/cardgen.js';
 import { graph } from './state.js';
 
 let _llmStatus = null;
@@ -278,5 +279,26 @@ export async function extractGraphNodesFromText(text, maxNodes = 3, useLlm = tru
   });
 
   return { nodes, links, engine: 'local' };
+}
+
+/**
+ * Genera flashcards (pregunta/respuesta) a partir de un texto o transcripción de sesión.
+ * source: 'document' | 'socratic' | 'explanation'. Devuelve { cards: [{front, back, tags, kind}], engine }.
+ */
+export async function generateFlashcards(text, { source = 'document', maxCards = 8, level = 'intermediate', lang = 'es', useLlm = true } = {}) {
+  try {
+    const res = await fetch('/api/flashcards/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.slice(0, 50000), source, max_cards: maxCards, level, lang, use_llm: useLlm }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.cards) && data.cards.length) return data;
+    }
+  } catch {
+    // fallback local
+  }
+  return { cards: localFlashcards(text, { maxCards, level, lang }), engine: 'local' };
 }
 

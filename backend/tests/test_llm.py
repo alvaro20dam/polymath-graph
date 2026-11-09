@@ -262,3 +262,28 @@ async def test_extract_graph_nodes_with_mocked_gemini():
         assert "gemini" in res["engine"]
 
 
+@pytest.mark.anyio
+async def test_generate_flashcards_with_mocked_gemini():
+    mock_payload = {
+        "cards": [
+            {
+                "front": "¿Por qué la prevalencia baja reduce el valor predictivo positivo?",
+                "back": "**Porque el volumen de falsos positivos en la población sana supera a los verdaderos positivos.**",
+                "tags": ["bayes", "probabilidad"],
+                "kind": "qa",
+            }
+        ]
+    }
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_payload
+
+        res = await llm.generate_flashcards_with_llm("Texto sobre paradoja del falso positivo y Bayes", max_cards=2)
+        assert res is not None
+        assert "gemini" in res["engine"]
+        assert len(res["cards"]) == 1
+        assert "prevalencia" in res["cards"][0]["front"]
+        assert res["cards"][0]["kind"] == "qa"
+
+
+

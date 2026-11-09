@@ -1,8 +1,10 @@
 // SocraticTutor_Agent + pizarra interactiva
-import { el, nodeChip, navigate, progress, bus, graph } from '../state.js';
+import { el, nodeChip, navigate, progress, bus, graph, flashcards } from '../state.js';
 import { PROBLEMS, getProblem, newSession, evaluate, hint, openingMessage, masteryGaps, studyPlan } from '../engines/socratic.js';
-import { evaluateSocratic, askSocraticHint, evaluateWhiteboard, getLlmStatus } from '../api.js';
+import { evaluateSocratic, askSocraticHint, evaluateWhiteboard, generateFlashcards, getLlmStatus } from '../api.js';
 import { renderMarkdown } from '../engines/text.js';
+import { socraticCards } from '../engines/cardgen.js';
+import { newCard } from '../engines/srs.js';
 
 const COLORS = ['#e6e9f5', '#7c8cff', '#34d399', '#fbbf24', '#f87171'];
 
@@ -42,6 +44,7 @@ export function mount(root) {
   const evalBoardChatBtn = el('button', { class: 'btn small', onclick: () => evalWhiteboard(), title: 'Evalúa el dibujo actual en la pizarra' }, '👁️ Pizarra');
   const hintBtn = el('button', { class: 'btn small', onclick: () => askHint() }, '💡 Pista');
   const planBtn = el('button', { class: 'btn small', onclick: () => showPlan() }, '📋 Plan');
+  const cardsBtn = el('button', { class: 'btn small', onclick: () => makeFlashcards(), title: 'Convierte este problema (y los pasos que te costaron) en tarjetas de repaso espaciado' }, '🗂 Flashcards');
 
   function autoResize() {
     chatInput.style.height = 'auto';
@@ -50,7 +53,7 @@ export function mount(root) {
   chatInput.addEventListener('input', autoResize);
 
   const inputRow = el('div', { class: 'chat-box-row' }, chatInput, sendBtn);
-  const toolsRow = el('div', { class: 'chat-tools-row' }, resetChatBtn, evalBoardChatBtn, hintBtn, planBtn);
+  const toolsRow = el('div', { class: 'chat-tools-row' }, resetChatBtn, evalBoardChatBtn, hintBtn, planBtn, cardsBtn);
   const chatInputWrap = el('div', { class: 'chat-input-wrap' }, inputRow, toolsRow);
 
   const llmBadge = el('span', { class: 'llm-badge', title: 'Estado del motor de tutoría' }, '● Local');
@@ -384,6 +387,47 @@ export function mount(root) {
     cur.messages.push({ role: 'plan', plan });
     chat.append(planEl(plan));
     scrollChat();
+  }
+
+  async function makeFlashcards() {
+    if (!cur) return;
+    const problem = cur.problem;
+    const session = cur.session;
+    const base = socraticCards(problem, session);
+
+    // Si el estudiante ya conversó, pide a la IA tarjetas personalizadas sobre sus errores y dudas
+    const userTurns = cur.messages.filter((m) => m.role === 'me' && m.text && !m.text.startsWith('🎨'));
+    let extra = [];
+    if (userTurns.length >= 2) {
+      cardsBtn.disabled = true;
+      const thinking = el('div', { class: 'msg tutor thinking' }, 'Creando tarjetas a partir de tu sesión…');
+      chat.append(thinking);
+      scrollChat();
+      const transcript = [
+        `PROBLEMA: ${problem.title}`,
+        `ENUNCIADO: ${problem.prompt}`,
+        `SÍNTESIS CORRECTA: ${problem.synthesis || ''}`,
+        `PASOS: ${problem.concepts.map((c) => `${c.name} (pistas usadas: ${session.hintsUsed?.[c.id] || 0}${session.mastered.includes(c.id) ? ', dominado' : ', pendiente'})`).join('; ')}`,
+        'CONVERSACIÓN:',
+        ...cur.messages.filter((m) => m.text).slice(-16).map((m) => `${m.role === 'me' ? 'ESTUDIANTE' : 'TUTOR'}: ${m.text}`),
+      ].join('\n');
+      try {
+        const res = await generateFlashcards(transcript, { source: 'socratic', maxCards: 4, level: session.level });
+        if (res.engine && res.engine.includes('gemini')) extra = res.cards || [];
+      } catch { /* solo tarjetas base */ } finally {
+        thinking.remove();
+        cardsBtn.disabled = false;
+      }
+    }
+
+    const all = [...extra.map((c) => ({ ...c, tags: [...new Set([...(c.tags || []), 'socratico', problem.node, 'personalizada'])] })), ...base];
+    const added = flashcards.add(all.map((c) => newCard({ ...c, source: 'socratic' })));
+    if (!added.length) {
+      push('tutor', '🗂 Las tarjetas de este problema ya están en tu mazo. Repásalas en la pestaña **«🗂 Repaso»**.');
+      return;
+    }
+    const hard = problem.concepts.filter((c) => (session.hintsUsed?.[c.id] || 0) > 0).map((c) => c.name);
+    push('tutor', `🗂 Añadí **${added.length}** tarjeta(s) de «${problem.title}» a tu mazo${extra.length ? ` (${extra.length} personalizadas con IA a partir de tu conversación)` : ''}.${hard.length ? ` Prioricé los pasos donde pediste pistas: *${hard.join(', ')}*.` : ''} Estúdialas en **«🗂 Repaso»** o expórtalas a Anki.`);
   }
 
   bus.addEventListener('progress', () => { if (cur) renderList(); });
