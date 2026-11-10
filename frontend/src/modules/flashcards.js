@@ -1,7 +1,8 @@
-// Repaso espaciado (estilo Anki): estudio con SM-2, gestión del mazo y exportación .csv para Anki.
-import { el, bus, flashcards, nodeById, openNode } from '../state.js';
+// Repaso espaciado (estilo Anki): estudio con SM-2, gestión del mazo y exportación .apkg/.csv para Anki.
+import { el, bus, flashcards, nodeById, openNode, getActiveUserId } from '../state.js';
 import { newCard, review, buildQueue, deckStats, previewIntervals, formatInterval, toAnkiCsv, GRADES, SRS_CONFIG } from '../engines/srs.js';
 import { renderMarkdown } from '../engines/text.js';
+import { downloadAnkiPackage, downloadAnkiTsv } from '../api.js';
 
 const STATE_LABEL = { new: 'Nueva', learning: 'Aprendiendo', relearning: 'Reaprendiendo', review: 'Repaso' };
 const SOURCE_LABEL = { document: '📖 Documento', socratic: '❓ Tutor', explanation: '✨ Explicación', graph: '◉ Grafo', manual: '✏ Manual' };
@@ -29,16 +30,20 @@ export function mount(root) {
     statsBox,
     studyBtn,
     el('label', { class: 'field' }, el('span', {}, 'Etiqueta'), tagSel),
-    el('div', { class: 'row', style: 'gap:.4rem' },
+    el('div', { class: 'row', style: 'gap:.4rem;flex-wrap:wrap;' },
       el('button', { class: 'btn small', onclick: () => openForm() }, '＋ Nueva tarjeta'),
-      el('button', { class: 'btn small', onclick: () => exportCsv() }, '⬇ Exportar a Anki (.csv)')),
+      el('button', { class: 'btn small primary', title: 'Descarga el paquete nativo oficial de Anki con estilos oscuros incluidos', onclick: async () => {
+        const ok = await downloadAnkiPackage(getActiveUserId());
+        if (!ok) alert('No se pudo generar el paquete .apkg');
+      } }, '📦 Exportar Anki (.apkg)'),
+      el('button', { class: 'btn small', title: 'Descarga en texto plano CSV/TSV', onclick: () => exportCsv() }, '📄 Exportar .csv')),
     form,
     el('details', { class: 'fc-help' },
       el('summary', {}, '¿Cómo importar en Anki?'),
       el('ol', {},
-        el('li', {}, 'Pulsa «⬇ Exportar a Anki (.csv)».'),
-        el('li', {}, 'En Anki (escritorio ≥ 2.1.55): Archivo → Importar → elige el .csv.'),
-        el('li', {}, 'Anki detecta automáticamente el mazo «Polymath Graph», el tipo «Básico» y las etiquetas.'))),
+        el('li', {}, el('b', {}, 'Opción 1 (.apkg nativo): '), 'Pulsa «📦 Exportar Anki (.apkg)» y haz doble clic sobre el archivo descargado para abrirlo en Anki (Escritorio o AnkiDroid). ¡Listo!'),
+        el('li', {}, el('b', {}, 'Opción 2 (.csv manual): '), 'Pulsa «📄 Exportar .csv» y en Anki selecciona Archivo → Importar.'))),
+
     el('details', { class: 'fc-help' },
       el('summary', {}, '¿De dónde salen las tarjetas?'),
       el('ul', {},

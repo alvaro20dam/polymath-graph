@@ -5,6 +5,7 @@ import { newCard } from '../engines/srs.js';
 import { buildIndex, search } from '../engines/rag.js';
 import { PROBLEMS } from '../engines/socratic.js';
 import timelines from '@data/timelines.json';
+import { downloadObsidianVault } from '../api.js';
 
 const LAB_FOR = { bayes_theorem: 'bayes', probability: 'ev', expected_value: 'ev', law_large_numbers: 'ev', variance: 'ev', normal_distribution: 'ev', gradient_descent: 'gd', backpropagation: 'gd', perceptron: 'nn', neural_networks: 'nn' };
 const LOGIC_FOR = { fallacies: 'fallacy', cognitive_biases: 'fallacy', critical_thinking: 'fallacy', aristotelian_logic: 'formal', propositional_logic: 'formal', predicate_logic: 'formal', stoicism: 'formal', godel_incompleteness: 'formal' };
@@ -111,6 +112,10 @@ export function mount(root) {
     el('button', { class: 'btn small', onclick: () => rabbitHole() }, '🐇 Madriguera'),
     el('button', { class: 'btn small', onclick: () => resetView() }, '⤢ Reencuadrar'),
     el('button', { class: 'btn small', title: 'Cerrar panel de detalle y deseleccionar nodo', onclick: () => { clearSelection(); } }, '✕ Deseleccionar'),
+    el('button', { class: 'btn small', title: 'Exportar todo el grafo como bóveda de Obsidian (.zip)', onclick: async () => {
+      const ok = await downloadObsidianVault();
+      if (!ok) alert('No se pudo generar la bóveda de Obsidian');
+    } }, '🌌 Obsidian (.zip)'),
     btnResetCustom);
   stage.append(hud);
   stage.append(el('div', { class: 'legend', html: 'Tamaño = conexiones · <span style="color:#58628a">→</span> influencia · <span style="color:#f87171">- -</span> contraste · <span style="color:#34d399">◌</span> dominado · <span style="color:var(--accent2)">✦</span> tus documentos' }));

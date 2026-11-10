@@ -340,4 +340,11 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     expect(updatedProf.solvedChallenges).toBeGreaterThanOrEqual(1);
     expect(updatedProf.badges.find((b) => b.id === 'bridge_builder')?.unlocked).toBe(true);
   });
+
+  it('Exportador Universal: funciones de exportación de Obsidian y Anki disponibles', async () => {
+    const api = await import('../src/api.js');
+    expect(typeof api.downloadObsidianVault).toBe('function');
+    expect(typeof api.downloadAnkiPackage).toBe('function');
+    expect(typeof api.downloadAnkiTsv).toBe('function');
+  });
 });

@@ -1,8 +1,8 @@
 // Desafío Polímata: Radar de Maestría Interdisciplinaria (Spider Chart) + Retos Adaptativos con IA
-import { el, graph, nodeById, nodeChip, openNode, navigate, progress, flashcards, bus, exportLocalBackup, importLocalBackup, getSyncStatus } from '../state.js';
+import { el, graph, nodeById, nodeChip, openNode, navigate, progress, flashcards, bus, exportLocalBackup, importLocalBackup, getSyncStatus, getActiveUserId } from '../state.js';
 import { newCard } from '../engines/srs.js';
 import { renderMarkdown } from '../engines/text.js';
-import { requestGenerateChallenge, requestEvaluateChallenge, fetchChallengesBank, getLlmStatus } from '../api.js';
+import { requestGenerateChallenge, requestEvaluateChallenge, fetchChallengesBank, getLlmStatus, downloadObsidianVault, downloadAnkiPackage } from '../api.js';
 
 export function mount(root) {
   const container = el('div', { class: 'page scroll challenge-page' });
@@ -153,7 +153,23 @@ export function mount(root) {
           el('code', { style: 'font-size:.8rem;background:rgba(255,255,255,0.06);padding:.15rem .4rem;border-radius:4px;' }, 'data/polymath.db'),
           el('span', { class: 'pill', style: '--c:var(--good);font-size:.75rem;' }, 'Persistencia Activa')
         ),
-        el('div', { class: 'row', style: 'gap:.45rem;' },
+        el('div', { class: 'row', style: 'gap:.45rem;flex-wrap:wrap;' },
+          el('button', {
+            class: 'btn small primary',
+            title: 'Descarga tu grafo completo como una bóveda de Obsidian con notas interconectadas por [[wikilinks]]',
+            onclick: async () => {
+              const ok = await downloadObsidianVault(getActiveUserId());
+              if (!ok) alert('No se pudo generar la bóveda de Obsidian.');
+            },
+          }, '🌌 Bóveda Obsidian (.zip)'),
+          el('button', {
+            class: 'btn small',
+            title: 'Descarga tus tarjetas en paquete nativo .apkg para abrir directamente en Anki',
+            onclick: async () => {
+              const ok = await downloadAnkiPackage(getActiveUserId());
+              if (!ok) alert('No se pudo generar el paquete .apkg de Anki.');
+            },
+          }, '📦 Mazo Anki (.apkg)'),
           el('button', {
             class: 'btn small',
             title: 'Descarga un archivo JSON con tu progreso, notas y flashcards',
@@ -167,13 +183,13 @@ export function mount(root) {
               a.click();
               URL.revokeObjectURL(url);
             },
-          }, '📥 Exportar Respaldo'),
+          }, '📥 Exportar JSON'),
           el('label', {
             class: 'btn small',
             style: 'cursor:pointer;',
             title: 'Restaura una copia de seguridad en formato JSON',
           },
-            '📤 Importar Respaldo',
+            '📤 Importar JSON',
             el('input', {
               type: 'file',
               accept: '.json',

@@ -10,12 +10,12 @@ import os
 from pathlib import Path
 import re
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import pypdf
 
-from . import data, db, llm, skills
+from . import data, db, export, llm, skills
 from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
 
 # Inicializar base de datos local SQLite
@@ -420,6 +420,41 @@ def export_user_backup(user_id: str = Query(default="default")) -> dict:
 def import_user_backup(req: UserBackupImportRequest) -> dict:
     """Restaura o fusiona un archivo JSON de respaldo en la base de datos local."""
     return db.import_backup(user_id=req.user_id, backup_dict=req.backup)
+
+
+# ---------------- Exportador Universal (Obsidian & Anki) ----------------
+@app.get(f"{api}/export/obsidian")
+def export_obsidian(user_id: str = Query(default="default")) -> Response:
+    """Genera y descarga una bóveda completa de Obsidian (.zip) con notas interconectadas."""
+    zip_bytes = export.export_obsidian_vault(user_id=user_id)
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=Polymath_Obsidian_Vault.zip"},
+    )
+
+
+@app.get(f"{api}/export/anki")
+def export_anki(user_id: str = Query(default="default")) -> Response:
+    """Genera y descarga un paquete nativo de Anki (.apkg) con estilos visuales y etiquetas."""
+    apkg_bytes = export.export_anki_package(user_id=user_id)
+    return Response(
+        content=apkg_bytes,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": "attachment; filename=Polymath_Deck.apkg"},
+    )
+
+
+@app.get(f"{api}/export/anki-tsv")
+def export_anki_tsv(user_id: str = Query(default="default")) -> Response:
+    """Exporta las tarjetas en formato TSV para importación de texto en Anki."""
+    tsv_content = export.export_anki_tsv(user_id=user_id)
+    return Response(
+        content=tsv_content,
+        media_type="text/tab-separated-values",
+        headers={"Content-Disposition": "attachment; filename=polymath_cards.tsv"},
+    )
+
 
 
 

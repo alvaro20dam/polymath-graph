@@ -507,6 +507,63 @@ export async function importUserBackup(backup, userId = 'default') {
   return null;
 }
 
+// ---------------- Exportador Universal (Obsidian & Anki) ----------------
+export async function downloadObsidianVault(userId = 'default') {
+  try {
+    const res = await fetch(`/api/export/obsidian?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error('Error al generar la bóveda de Obsidian');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Polymath_Obsidian_Vault.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (err) {
+    console.error('Error al descargar bóveda de Obsidian:', err);
+    return false;
+  }
+}
+
+export async function downloadAnkiPackage(userId = 'default') {
+  try {
+    const res = await fetch(`/api/export/anki?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error('Error al generar el mazo de Anki');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Polymath_Deck.apkg';
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (err) {
+    console.error('Error al descargar paquete Anki:', err);
+    return false;
+  }
+}
+
+export async function downloadAnkiTsv(userId = 'default') {
+  try {
+    const res = await fetch(`/api/export/anki-tsv?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) throw new Error('Error al generar el archivo TSV');
+    const text = await res.text();
+    const blob = new Blob([text], { type: 'text/tab-separated-values' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'polymath_cards.tsv';
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (err) {
+    console.error('Error al descargar TSV:', err);
+    return false;
+  }
+}
+
+
 
 
 
