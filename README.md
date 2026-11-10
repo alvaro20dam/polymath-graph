@@ -1,67 +1,128 @@
-# Polymath Graph
+# 🌐 Polymath Graph (v2.0)
 
-Plataforma web para explorar el conocimiento interconectado entre **Filosofía, Ciencia, Tecnología, Historia, Lógica/Matemática y Arte**. Sin registro, sin cuentas: el progreso vive solo en el `localStorage` del navegador.
+Plataforma interactiva de exploración del conocimiento interconectado entre **Filosofía, Ciencia, Tecnología, Historia, Lógica/Matemática y Arte**. 
 
-| Módulo | Qué hace |
-|---|---|
-| **Grafo** | 71 nodos y 131 aristas semánticas (D3 force). Filtros por disciplina y complejidad, búsqueda TF-IDF, panel lateral, "modo madriguera" (vecindad a N saltos), camino más corto entre ideas y 5 rutas de aprendizaje. |
-| **Tutor socrático** | 7 problemas con pizarra de dibujo, pasos escritos, preguntas guiadas, pistas progresivas (nunca entrega la solución), detección de malentendidos, mapa de brechas y plan de estudio adaptativo. |
-| **Explicador** | Selecciona texto y obtén explicaciones en 3 niveles (principiante/intermedio/experto), ES/EN, traducción de jerga y **chat con el documento** (RAG extractivo con citas). |
-| **Laboratorio** | Simulaciones en Canvas: esperanza/varianza/ley de grandes números, Bayes con frecuencias naturales, descenso del gradiente (con momento) y una red neuronal entrenable (XOR). |
-| **Lógica y falacias** | 24 falacias + 24 sesgos con detección heurística, parser de estructura argumental, tarjetas, quiz, y laboratorio de lógica formal (tablas de verdad, validez con contraejemplo). |
-| **Líneas de tiempo** | Cronología por disciplina generada desde los datos del grafo (con modo "reproducir historia") y 3 escenarios ramificados de historia alternativa. |
+Diseñada bajo una filosofía **Offline-First**, de alta privacidad y con arquitectura híbrida: funciona al 100% en local sin necesidad de claves externas, y se enriquece de forma transparente con **IA generativa (Gemini 3.5 Flash)** cuando está disponible.
 
-## Arranque rápido
+---
+
+## 🚀 Módulos de la Plataforma
+
+| Módulo | Icono | Capacidades Principales |
+|---|:---:|---|
+| **Grafo** | `◉` | 71 nodos conceptuales y 131 conexiones semánticas (física D3.js). Filtros por disciplina y complejidad, búsqueda TF-IDF, panel de detalles, "modo madriguera" (vecindad de N saltos), camino más corto entre ideas (BFS) y rutas de aprendizaje. |
+| **Desafío Polímata** | `🎯` | Nivelación adaptativa y **Radar Hexagonal de Competencias**. Banco de retos interdisciplinarios (ej. *Landauer y la Entropía*), evaluación de justificaciones, medallas de maestría y ganancia de XP. |
+| **Tutor Socrático** | `❓` | 7 problemas fundamentales con **pizarra interactiva de dibujo**, pasos de razonamiento, preguntas guiadas, pistas progresivas, detección de malentendidos típicos y plan de estudio adaptativo. Soporte multimodal con visión para fórmulas matemáticas. |
+| **Lector Split-Screen** | `📖` | Lector aumentado para PDFs y artículos técnicos. **Panel dual**: lectura de párrafos a la izquierda + **subgrafo semántico reactivo D3 en vivo** a la derecha, barra de distribución disciplinar, navegación bidireccional texto-grafo y chat RAG con citas exactas. |
+| **Laboratorio** | `🧪` | Simulaciones visuales en Canvas HTML5: esperanza y varianza (Ley de los Grandes Números), inferencia bayesiana con frecuencias naturales, descenso del gradiente 3D con momento y red neuronal interactiva entrenable (problema XOR). |
+| **Lógica & Falacias** | `⚖` | Catálogo interactivo de 24 falacias lógicas y 24 sesgos cognitivos. Evaluador de lógica formal (tablas de verdad y contraejemplos) y **Arena de Duelo Dialéctico 1 vs 1** contra 12 filósofos históricos (Sócrates, Nietzsche, Popper...) con medidor de rigor (0-100) en vivo y veredicto. |
+| **Líneas de Tiempo** | `⏳` | **Navegador por las 6 Eras Históricas (530 a.C. — 2026)** con paradigmas de época y reproductor cronológico. **Buscador de Puentes Ocultos**: genealogía evolutiva paso a paso entre ideas separadas por milenios (ej. *Lógica Aristotélica ➔ Transformers*). Escenarios contrafactuales (*What if...?*). |
+| **Repaso Espaciado** | `🗂` | Motor de estudio basado en el algoritmo **SuperMemo SM-2 / Anki** integrado. Muestra tarjetas pendientes hoy, intervalos y factor de facilidad. **Exportador Universal** en 1 clic a paquetes nativos de Anki (`.apkg` y `.tsv`) y bóvedas completas de Obsidian (`.zip`). |
+
+---
+
+## 💾 Persistencia Relacional Local (`data/polymath.db`)
+
+A diferencia de las herramientas convencionales que pierden tus datos si borras las cookies del navegador:
+
+* **Base de datos SQLite local:** Todo tu progreso (XP, retos resueltos, duelos dialécticos, tarjetas de estudio y nodos creados) se sincroniza en el archivo `data/polymath.db`.
+* **Multi-perfil:** Soporte para múltiples perfiles locales (ej. *Polímata Principal*, *Investigador*).
+* **Copias de seguridad portables:** Exportación e importación de backups completos en JSON desde `/api/user/backup/export`.
+* **Doble capa de seguridad:** Sincronización continua entre `localStorage` y SQLite, con indicador visual en vivo `💾 SQLite Local (Activo)`.
+
+---
+
+## 📦 Exportador Universal (Anki & Obsidian)
+
+Polymath Graph permite transformar tu investigación y estudio en artefactos listos para tu flujo de trabajo diario:
+
+1. **Paquetes de Anki (`.apkg`):**
+   - Generación nativa con `genanki` con estilos oscuros, etiquetas por disciplina y mazo personalizado.
+   - Compatible directamente con **Anki Desktop**, **AnkiMobile (iOS)** y **AnkiDroid (Android)**.
+2. **Bóvedas de Obsidian (`.zip`):**
+   - Estructura jerárquica de carpetas por disciplina.
+   - Notas en Markdown con metadatos YAML frontmatter, enlaces bidireccionales `[[wikilinks]]` entre ideas relacionadas y tags.
+   - Lista para abrirse como bóveda y explorarse con el **Graph View** nativo de Obsidian.
+
+---
+
+## ⚡ Arranque Rápido
+
+### 1. Servidor Completo (Recomendado)
+```bash
+# Iniciar API FastAPI y servicio estático del frontend en localhost:8000
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+Abre en tu navegador:
+* 🌐 **Aplicación:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+* 📖 **Documentación interactiva Swagger:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### 2. Frontend en Modo Desarrollo (Vite)
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
+```
+
+### 3. Contenedor Docker Unificado
+```bash
+docker build -t polymath-graph .
+docker run -p 8000:8000 polymath-graph
+```
+
+---
+
+## 🧪 Pruebas Automatizadas y Calidad
+
+Ejecuta el pipeline completo de verificación continua:
 
 ```bash
-# Frontend (autónomo, todos los motores corren en el navegador)
-cd frontend && npm install && npm run dev        # http://localhost:5173
+# Ejecutar todas las pruebas del backend (51 tests)
+python -m pytest backend/tests -v -p no:cacheprovider
 
-# API opcional (misma lógica en Python)
-cd backend && python -m venv .venv && .venv/Scripts/activate   # (Linux/Mac: source .venv/bin/activate)
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload                   # http://localhost:8000/docs
+# Ejecutar todas las pruebas del frontend (33 tests)
+npm run --prefix frontend test
 
-# Todo en un contenedor (API + frontend estático)
-docker build -t polymath-graph . && docker run -p 8000:8000 polymath-graph
+# Compilación de producción optimizada
+npm run --prefix frontend build
+
+# Pipeline unificado (Grafo -> Pytest -> Vitest -> Vite Build)
+python scripts/pipeline.py
 ```
 
-Validación completa: `python scripts/pipeline.py` (grafo → pytest → vitest → build).
+---
 
-## Estructura
+## 📂 Estructura del Proyecto
 
 ```
-data/            Fuente única de verdad: graph, fallacies, socratic, glossary, samples, timelines (JSON)
-scripts/         build_graph.py (GraphArchitect), pipeline.py (deployment_pipeline)
-agents/          agents.json: definición del equipo AGY (prompts, skills, entregables)
-frontend/        Vite + D3 (vanilla JS). src/engines = motores; src/modules = pestañas
-backend/         FastAPI. app/skills.py = AGY Skills Library en Python; tests/ con pytest
-.github/         CI + despliegue a GitHub Pages
+polymath-graph/
+├── data/               # Fuente de verdad: graph.json, fallacies.json, thinkers.json, timelines.json, polymath.db
+├── scripts/            # build_graph.py, pipeline.py
+├── frontend/           # Interfaz SPA con Vite + D3.js (Vanilla JS modular)
+│   ├── src/
+│   │   ├── engines/    # Motores: docGraph.js, timelineEngine.js, srs.js, fallacy.js, logic.js, rag.js, socratic.js
+│   │   ├── modules/    # Pestañas: explainer.js, timeline.js, debate.js, challengeView.js, flashcards.js, graphView.js, lab.js
+│   │   ├── api.js      # Cliente de comunicación con backend y fallbacks offline
+│   │   └── state.js    # Store central reactivo y sincronizador SQLite
+│   └── tests/          # Suite de pruebas unitarias (Vitest)
+├── backend/            # API FastAPI y Skills Library en Python
+│   ├── app/
+│   │   ├── main.py     # Endpoints REST (FastAPI)
+│   │   ├── skills.py   # Implementación algorítmica de todas las habilidades
+│   │   ├── db.py       # Capa de persistencia relacional SQLite
+│   │   ├── export.py   # Exportador universal de Anki (.apkg) y Obsidian (.zip)
+│   │   ├── llm.py      # Integración con Gemini 3.5 Flash (estructurado y visión)
+│   │   └── schemas.py  # Modelos de datos Pydantic
+│   └── tests/          # Pruebas automatizadas (Pytest)
+├── MANUAL_DE_PRUEBAS.md # Guía paso a paso con scripts de prueba
+└── README.md           # Este documento
 ```
 
-### Equipo de agentes → implementación
+---
 
-| Agente | Skills | Dónde vive |
-|---|---|---|
-| GraphArchitect | `graph_node_builder`, `semantic_link_evaluator`, `citation_network_mapper` | `scripts/build_graph.py`, `backend/app/skills.py` |
-| FrontendUIX | `d3_graph_renderer`, `interactive_canvas_builder`, `responsive_layout_manager` | `frontend/src/modules/graphView.js`, `lab.js`, `styles.css` |
-| SocraticTutor | `socratic_hint_generator`, `mastery_gap_analyzer`, `adaptive_complexity_scaler`, `explainpaper_highlighter` | `engines/socratic.js`, `engines/explain.js` + Python |
-| LogicVerifier | `fallacy_checker`, `bias_detector`, `argument_structure_parser` | `engines/fallacy.js`, `engines/logic.js` + Python |
-| DevOps_Orchestrator | `fastapi_route_builder`, `vector_search_indexer`, `deployment_pipeline` | `backend/app/main.py`, `engines/rag.js`, `scripts/pipeline.py`, `Dockerfile`, CI |
+## 🗺️ Hoja de Ruta y Escalabilidad
 
-### API (resumen)
+Para consultar el diagnóstico de arquitectura, estrategias de despliegue global (Turso/libSQL edge, microservicios serverless, RAG vectorial) y el modelo de negocio B2C/B2B institucional, consulta el [Plan de Escalabilidad y Monetización](file:///C:/DESARROLLO/polymath-graph/PLAN_ESCALABILIDAD_Y_MONETIZACION.md).
 
-`GET /api/graph`, `/api/graph/nodes/{id}`, `/api/graph/path?source=&target=`, `/api/search?q=` · `POST /api/fallacies/check`, `/api/explain`, `/api/rag/query`, `/api/socratic/{start,evaluate,hint,plan}` (sesiones sin estado: el cliente devuelve la sesión) · documentación interactiva en `/docs`.
-
-## Despliegue
-
-- **Estático** (recomendado): `npm run build` → `frontend/dist` en GitHub Pages/Netlify/Vercel (`base: './'`). El workflow `.github/workflows/ci.yml` lo publica en Pages al hacer push a `main` (activar *Settings → Pages → GitHub Actions*).
-- **Contenedor**: `Dockerfile` unificado para Render, Fly.io, Cloud Run, etc.
-
-## Alcance y limitaciones (honestidad técnica)
-
-- **No hay LLM**. El tutor, el explicador y el detector de falacias son motores deterministas basados en reglas, patrones y glosarios curados. Funcionan sin red y son verificables, pero son más rígidos que un modelo generativo. El punto natural de extensión es sustituir `evaluate()` / `explain()` por una llamada a un LLM manteniendo las mismas firmas.
-- La detección de falacias/sesgos es **heurística léxica** (español/inglés): produce falsos positivos y negativos. La UI lo advierte; la verificación formal (tablas de verdad) sí es exacta.
-- El RAG usa **TF-IDF + coseno**, no embeddings neuronales; no se integró Supabase/pgvector (el progreso es local). Ambos son reemplazables sin tocar la UI.
-- El tutor evalúa el **texto** de los pasos y el chat; los dibujos de la pizarra son borrador libre.
-- El contenido del grafo, problemas y escenarios fue redactado para este proyecto; conviene una revisión editorial/académica antes de uso educativo formal. Los escenarios de historia alternativa son especulativos y así se indica.
+---
+*Polymath Graph · Creado para la exploración del conocimiento interconectado.*
