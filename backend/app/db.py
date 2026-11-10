@@ -116,6 +116,20 @@ def init_db(db_path: Path | str | None = None) -> None:
                 PRIMARY KEY (user_id, source, target),
                 FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS duels (
+                id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                thinker_id TEXT NOT NULL,
+                topic TEXT NOT NULL,
+                won INTEGER DEFAULT 0,
+                average_rigor REAL DEFAULT 70.0,
+                xp INTEGER DEFAULT 0,
+                rounds_json TEXT DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, id),
+                FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+            );
             """
         )
 
@@ -249,11 +263,29 @@ def get_user_state(user_id: str = "default", db_path: Path | str | None = None) 
         ).fetchall()
         custom_links = [dict(r) for r in cl_rows]
 
+        # 6. Duelos dialécticos
+        duel_rows = conn.execute(
+            "SELECT id, thinker_id, topic, won, average_rigor, xp, rounds_json, created_at FROM duels WHERE user_id = ?",
+            (user_id,),
+        ).fetchall()
+        duels = {}
+        for r in duel_rows:
+            duels[r["id"]] = {
+                "thinkerId": r["thinker_id"],
+                "topic": r["topic"],
+                "won": bool(r["won"]),
+                "averageRigor": r["average_rigor"],
+                "xp": r["xp"],
+                "rounds": json.loads(r["rounds_json"] or "[]"),
+                "date": r["created_at"],
+            }
+
     return {
         "profile": profile,
         "visited": visited,
         "problems": problems,
         "challenges": challenges,
+        "duels": duels,
         "xp": profile.get("xp", 0),
         "flashcards": flashcards,
         "customGraph": {
@@ -415,6 +447,32 @@ def sync_user_state(user_id: str, payload: dict[str, Any], db_path: Path | str |
                         VALUES (?, ?, ?, ?)
                         """,
                         (user_id, s, t, rel),
+                    )
+
+        # 6. Duelos dialécticos
+        duels = payload.get("duels")
+        if isinstance(duels, dict):
+            for duel_id, d_data in duels.items():
+                if isinstance(d_data, dict):
+                    thinker_id = str(d_data.get("thinkerId", "socrates"))
+                    topic = str(d_data.get("topic", ""))
+                    won = 1 if d_data.get("won") else 0
+                    average_rigor = float(d_data.get("averageRigor", 70.0))
+                    xp = int(d_data.get("xp", 0))
+                    rounds = json.dumps(d_data.get("rounds", []))
+                    conn.execute(
+                        """
+                        INSERT INTO duels (id, user_id, thinker_id, topic, won, average_rigor, xp, rounds_json, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(user_id, id) DO UPDATE SET
+                            thinker_id = excluded.thinker_id,
+                            topic = excluded.topic,
+                            won = excluded.won,
+                            average_rigor = excluded.average_rigor,
+                            xp = excluded.xp,
+                            rounds_json = excluded.rounds_json
+                        """,
+                        (str(duel_id), user_id, thinker_id, topic, won, average_rigor, xp, rounds, now),
                     )
 
         conn.commit()

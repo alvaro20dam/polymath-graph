@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, db, export, llm, skills
-from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
+from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, DuelTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
 
 # Inicializar base de datos local SQLite
 db.init_db()
@@ -136,6 +136,21 @@ async def debate_turn(req: DebateTurnRequest) -> dict:
         if res is not None:
             return res
     return skills.debate_turn_heuristic(req.thinker_id, req.opponent_id, req.topic, req.history, req.user_intervention)
+
+
+@app.post(f"{api}/debate/duel")
+async def debate_duel(req: DuelTurnRequest) -> dict:
+    """Evalúa el asalto dialéctico individual (1 vs 1) del usuario contra un pensador histórico."""
+    if req.use_llm and llm.get_llm_config()["enabled"]:
+        res = await llm.evaluate_duel_turn_with_llm(
+            req.thinker_id, req.topic, req.user_argument, req.round_number, req.history
+        )
+        if res is not None:
+            return res
+    return skills.evaluate_duel_turn_heuristic(
+        req.thinker_id, req.topic, req.user_argument, req.round_number, req.history
+    )
+
 
 
 # ---------------- Desafío Polímata & Gamificación Interdisciplinaria ----------------

@@ -735,3 +735,126 @@ def evaluate_challenge_heuristic(
     }
 
 
+@skill
+def evaluate_duel_turn_heuristic(
+    thinker_id: str,
+    topic: str,
+    user_argument: str,
+    round_number: int = 1,
+    history: list[dict] | None = None,
+) -> dict:
+    """Evalúa heurísticamente el argumento del usuario en un Duelo 1 vs 1 y genera la réplica del pensador."""
+    catalog = data.load("thinkers")
+    thinkers_by_id = {t["id"]: t for t in catalog.get("thinkers", [])}
+    thinker = thinkers_by_id.get(
+        thinker_id,
+        {"name": thinker_id.capitalize(), "avatar": "🏛️", "core_stance": "Análisis riguroso de las ideas.", "era": "Filosofía clásica"},
+    )
+    t_name = thinker["name"]
+    stance = thinker.get("core_stance", "")
+
+    # 1. Auditar falacias y sesgos en el argumento del usuario
+    audit_fallacies = fallacy_checker(user_argument)
+    audit_biases = bias_detector(user_argument)
+    detected_fallacies = audit_fallacies.get("fallacies", []) if isinstance(audit_fallacies, dict) else (audit_fallacies or [])
+    detected_biases = audit_biases if isinstance(audit_biases, list) else (audit_biases.get("biases", []) if isinstance(audit_biases, dict) else [])
+
+    # 2. Calcular rigor lógico
+    words = user_argument.split()
+    word_count = len(words)
+
+    # Base de rigor
+    rigor = 70
+
+    # Bonificación por extensión sustantiva
+    if word_count >= 25:
+        rigor += 10
+    if word_count >= 50:
+        rigor += 8
+
+    # Bonificación por conectores lógicos
+    connectors = ["porque", "dado que", "por tanto", "por consiguiente", "sin embargo", "en consecuencia", "si bien", "evidencia", "premisa", "demuestra"]
+    matches = sum(1 for c in connectors if re.search(rf"\b{c}\b", user_argument, re.IGNORECASE))
+    rigor += min(12, matches * 4)
+
+    # Penalización por falacias detectadas
+    if detected_fallacies:
+        rigor -= min(35, len(detected_fallacies) * 15)
+    if detected_biases:
+        rigor -= min(15, len(detected_biases) * 8)
+
+    user_rigor = max(20, min(98, rigor))
+
+    # Puntos fuertes detectados
+    strengths = []
+    if matches >= 2:
+        strengths.append("Articulación argumentativa con conectores causales.")
+    if word_count >= 30:
+        strengths.append("Desarrollo conceptual con premisas explícitas.")
+    if not detected_fallacies:
+        strengths.append("Ausencia de falacias formales o informales evidentes.")
+    if not strengths:
+        strengths.append("Planteamiento directo de la postura.")
+
+    # 3. Construir la réplica en primera persona del pensador
+    fallacy_callout = ""
+    if detected_fallacies:
+        f_name = detected_fallacies[0].get("name", "inconsistencia lógica")
+        fallacy_callout = f" Percibo en tu razonamiento un indicio de {f_name.lower()}: confundir la plausibilidad inicial con una deducción necesaria."
+
+    if round_number == 1:
+        reply_text = (
+            f"Escucho con atención tu tesis sobre «{topic}», estimado interlocutor. Sin embargo, mi perspectiva sostiene que {stance}."
+            f"{fallacy_callout} Al afirmar que «{user_argument.strip()[:100]}...», estás asumiendo premisas que requieren fundamentación previa. "
+            f"¿Cómo justificas ese supuesto ante las consecuencias de su aplicación rigurosa?"
+        )
+    elif round_number == 2:
+        reply_text = (
+            f"Tu contrarréplica muestra audacia dialéctica. No obstante, el nudo gordiano persiste: {stance}."
+            f"{fallacy_callout} Si concedemos tu punto, nos vemos forzados a aceptar una contradicción insostenible en el límite del concepto. "
+            f"Dime: ¿no estás reduciendo la complejidad del dilema para salvar tu hipótesis inicial?"
+        )
+    else:
+        # Ronda final / Conclusión del asalto
+        reply_text = (
+            f"Llegamos al clímax de nuestra disputa sobre «{topic}». Has defendido tu postura con notable empeño intelectual. "
+            f"Mi dictamen final se mantiene fiel a mi principio rector: {stance}. "
+            f"Aun así, has obligado a tensar los argumentos hasta su límite. La verdadera mayéutica no busca vencer, sino purificar el pensamiento."
+        )
+
+    # XP ganado en el asalto
+    xp_earned = max(15, int(user_rigor * 0.4))
+    if not detected_fallacies:
+        xp_earned += 10
+
+    # Veredicto si es la ronda final (ronda 3 o superior)
+    is_final = round_number >= 3
+    verdict = None
+    if is_final:
+        verdict = {
+            "won": user_rigor >= 65,
+            "title": "Victoria Dialéctica" if user_rigor >= 65 else "Lección Socrática",
+            "summary": (
+                f"Has concluido el duelo dialéctico contra {t_name} con un rigor final de {user_rigor}/100. "
+                + ("¡El pensador reconoce la solidez de tu razonamiento!" if user_rigor >= 65 else "El pensador ha desarticulado tus premisas centrales, pero el ejercicio ha fortalecido tu pensamiento crítico.")
+            ),
+        }
+
+    return {
+        "thinker_id": thinker_id,
+        "thinker_name": t_name,
+        "thinker_avatar": thinker.get("avatar", "🏛️"),
+        "thinker_era": thinker.get("era", ""),
+        "reply": reply_text,
+        "user_rigor": user_rigor,
+        "user_fallacies": detected_fallacies,
+        "user_biases": detected_biases,
+        "user_strengths": strengths,
+        "xp_earned": xp_earned,
+        "is_final_round": is_final,
+        "verdict": verdict,
+        "engine": "heuristic",
+    }
+
+
+

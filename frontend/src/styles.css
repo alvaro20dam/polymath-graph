@@ -342,4 +342,11 @@ table.tt tr.counter td { background: #f8717122; }
 .opt-indicator { width: 26px; height: 26px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 700; font-size: .85rem; flex: none; }
 .challenge-option.selected .opt-indicator { background: var(--accent); color: #0b0e17; border-color: var(--accent); }
 
+/* ---------- duelo dialéctico 1 vs 1 ---------- */
+.duel-view { display: flex; flex-direction: column; gap: .75rem; }
+.duel-log { min-height: 280px; max-height: 480px; overflow-y: auto; }
+.duel-input-card textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: .6rem; background: var(--bg); color: var(--text); font-family: inherit; resize: vertical; }
+.duel-verdict { padding: 1.2rem; border-radius: 12px; }
+
+
 

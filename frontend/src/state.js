@@ -59,6 +59,7 @@ export function scheduleDbSync() {
         visited: data.visited || [],
         problems: data.problems || {},
         challenges: data.challenges || {},
+        duels: data.duels || {},
         flashcards: deck.cards || [],
         customGraph: { nodes: customNodes, links: customLinks },
       };
@@ -105,6 +106,11 @@ export async function initDbSync(userId = _activeUserId) {
   // 3. Unir challenges
   if (remote.challenges && typeof remote.challenges === 'object') {
     data.challenges = { ...data.challenges, ...remote.challenges };
+  }
+
+  // 3.1 Unir duelos
+  if (remote.duels && typeof remote.duels === 'object') {
+    data.duels = { ...data.duels, ...remote.duels };
   }
 
   // 4. XP
@@ -228,11 +234,12 @@ function load() {
       quiz: raw?.quiz ?? { right: 0, total: 0 },
       visited: raw?.visited ?? [],
       challenges: raw?.challenges ?? {},
+      duels: raw?.duels ?? {},
       xp: raw?.xp ?? 0,
       badges: raw?.badges ?? [],
     };
   } catch {
-    return { problems: {}, quiz: { right: 0, total: 0 }, visited: [], challenges: {}, xp: 0, badges: [] };
+    return { problems: {}, quiz: { right: 0, total: 0 }, visited: [], challenges: {}, duels: {}, xp: 0, badges: [] };
   }
 }
 let data = load();
@@ -379,6 +386,24 @@ export const progress = {
     emit('progress');
   },
   challenges: () => data.challenges || {},
+  recordDuel(duelId, { thinkerId, topic, won, averageRigor = 70, xp = 0, rounds = [] } = {}) {
+    if (!data.duels) data.duels = {};
+    data.duels[duelId] = {
+      thinkerId,
+      topic,
+      won: Boolean(won),
+      averageRigor: Number(averageRigor) || 70,
+      xp: Number(xp) || 0,
+      rounds: Array.isArray(rounds) ? rounds : [],
+      date: Date.now(),
+    };
+    if (xp > 0) {
+      data.xp = (data.xp || 0) + Number(xp);
+    }
+    save();
+    emit('progress');
+  },
+  duels: () => data.duels || {},
   xp: () => data.xp || 0,
   domainMastery() {
     const scores = {};
@@ -431,6 +456,9 @@ export const progress = {
       { id: 'polymath_trio', name: 'Tríada Polímata', icon: '🎯', desc: 'Superaste 3 desafíos interdisciplinarios.', unlocked: solvedChallenges >= 3 },
       { id: 'memory_guardian', name: 'Guardián de la Memoria', icon: '🗂', desc: 'Tienes 10 o más tarjetas en tu mazo de repaso.', unlocked: allCards.length >= 10 },
       { id: 'balanced_mind', name: 'Mente Equilibrada', icon: '⚖️', desc: 'Alcanzaste al menos 25% de maestría en todas las disciplinas.', unlocked: Object.values(mastery).every((v) => v >= 25) },
+      { id: 'dialectic_contender', name: 'Contendor Dialéctico', icon: '⚔️', desc: 'Completaste tu primer duelo dialéctico 1 vs 1.', unlocked: Object.keys(data.duels || {}).length >= 1 },
+      { id: 'logic_hammer', name: 'Martillo Lógico', icon: '🔨', desc: 'Alcanzaste 80 o más de rigor lógico en un duelo.', unlocked: Object.values(data.duels || {}).some((d) => (d.averageRigor || 0) >= 80) },
+      { id: 'socratic_conqueror', name: 'Vencedor de Filósofos', icon: '👑', desc: 'Triunfaste en 3 o más duelos dialécticos.', unlocked: Object.values(data.duels || {}).filter((d) => d.won).length >= 3 },
     ];
 
     return {

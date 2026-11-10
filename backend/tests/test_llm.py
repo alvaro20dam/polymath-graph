@@ -357,6 +357,39 @@ async def test_challenge_generate_and_eval_with_mocked_gemini():
         assert "gemini" in eval_res["engine"]
 
 
+@pytest.mark.anyio
+async def test_duel_turn_with_mocked_gemini():
+    mock_duel_resp = {
+        "user_rigor": 90,
+        "user_strengths": ["Distingue adecuadamente conocimiento teórico y acción moral."],
+        "user_fallacies": [],
+        "reply": "Dices bien al invocar la akrasía, mas te pregunto: ¿acaso esa 'distorsión' no prueba que la persona ignoraba el verdadero coste de su elección?",
+        "xp_earned": 35,
+    }
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "dummy_test_key"}), \
+         patch("app.llm.generate_gemini", new_callable=AsyncMock) as mock_gemini:
+        mock_gemini.return_value = mock_duel_resp
+
+        res = await llm.evaluate_duel_turn_with_llm(
+            thinker_id="socrates",
+            topic="¿El conocimiento del Bien garantiza la virtud?",
+            user_argument="Existe la debilidad de la voluntad a pesar de la lucidez teórica.",
+            round_number=3,
+            history=[],
+        )
+
+        assert res is not None
+        assert res["thinker_id"] == "socrates"
+        assert res["user_rigor"] == 90
+        assert res["xp_earned"] == 35
+        assert "akrasía" in res["reply"]
+        assert res["is_final_round"] is True
+        assert res["verdict"]["won"] is True
+        assert "gemini" in res["engine"]
+
+
+
 
 
 

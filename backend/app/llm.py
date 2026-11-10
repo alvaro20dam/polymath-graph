@@ -1280,5 +1280,108 @@ DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura:
     }
 
 
+async def evaluate_duel_turn_with_llm(
+    thinker_id: str,
+    topic: str,
+    user_argument: str,
+    round_number: int = 1,
+    history: list[dict] | None = None,
+) -> dict | None:
+    """Evalúa con Gemini 3.5 Flash el argumento del usuario en un Duelo 1 vs 1 y genera la réplica dialéctica del pensador."""
+    cfg = get_llm_config()
+    if not cfg["enabled"]:
+        return None
+
+    from . import data
+    catalog = data.load("thinkers")
+    thinkers_by_id = {t["id"]: t for t in catalog.get("thinkers", [])}
+    thinker = thinkers_by_id.get(
+        thinker_id,
+        {"name": thinker_id.capitalize(), "avatar": "🏛️", "core_stance": "Análisis riguroso de las ideas.", "era": "Filosofía clásica"},
+    )
+    t_name = thinker["name"]
+
+    history_str = ""
+    if history:
+        turns = []
+        for h in history[-6:]:
+            spk = h.get("name") or ("Tú" if h.get("speaker") == "user" else t_name)
+            txt = h.get("text") or h.get("user_argument") or h.get("reply") or ""
+            turns.append(f"{spk}: {txt}")
+        history_str = "\n\n".join(turns)
+
+    system_prompt = f"""Eres {t_name} ({thinker.get('era', '')}), enfrentándote en un DUELO DIALÉCTICO INDIVIDUAL (1 vs 1) contra un estudiante en Polymath Graph.
+Tema del debate: «{topic}».
+Ronda actual: Asalto {round_number} de 3.
+
+TU IDENTIDAD FILOSÓFICA:
+- Postura esencial: {thinker.get('core_stance', '')}
+- Cita o principio rector: «{thinker.get('quote', '')}»
+- Tu estilo: Elocuente, formidablemente lúcido, desafiante pero profundamente pedagógico. Tratas al usuario de 'tú' o 'estimado interlocutor'.
+
+TU MISIÓN EN ESTE ASALTO:
+1. Evalúa con honestidad intelectual el argumento del usuario:
+   - "user_rigor": Puntuación de 0 a 100 de su rigor lógico, claridad y consistencia.
+   - "user_strengths": Lista de 1 a 2 puntos fuertes que el usuario logró articular.
+   - "user_fallacies": Lista de nombres de falacias o sesgos si cometió alguno (ej: ["Hombre de paja"] o [] si fue impecable).
+2. Genera tu RÉPLICA en primera persona ("reply") de entre 90 y 160 palabras:
+   - Responde con vigor a sus argumentos específicos.
+   - Si cometió una falacia o debilidad, señálala con elegancia filosófica.
+   - Defiende tu postura histórica ({thinker.get('core_stance', '')}) y cierra con una pregunta o dilema que ponga a prueba al usuario.
+3. Asigna "xp_earned" (entre 20 y 45 XP) acorde al rigor demostrado.
+
+DEBES responder ÚNICAMENTE con un JSON con esta estructura:
+{{
+  "user_rigor": 85,
+  "user_strengths": ["Premisa deductiva sólida", "Claridad conceptual"],
+  "user_fallacies": [],
+  "reply": "Tu respuesta viva encarnando a {t_name}...",
+  "xp_earned": 35
+}}
+"""
+
+    user_prompt = f"""HISTORIAL DEL DUELO PREVIO:
+{history_str if history_str else '(Inicio del asalto 1)'}
+
+ARGUMENTO DEL USUARIO EN ESTA RONDA:
+«{user_argument.strip()}»
+"""
+
+    result = await generate_gemini(system_prompt, user_prompt, json_mode=True, temperature=0.3)
+    if not isinstance(result, dict) or "reply" not in result:
+        return None
+
+    user_rigor = int(result.get("user_rigor", 75))
+    is_final = round_number >= 3
+    verdict = None
+    if is_final:
+        won = user_rigor >= 65
+        verdict = {
+            "won": won,
+            "title": "Victoria Dialéctica" if won else "Lección Socrática",
+            "summary": (
+                f"Has concluido el duelo dialéctico contra {t_name} con un rigor final de {user_rigor}/100. "
+                + ("¡El pensador concede la solidez de tu tesis!" if won else "El pensador ha superado tus defensas, pero la disputa ha afinado tu rigor.")
+            ),
+        }
+
+    return {
+        "thinker_id": thinker_id,
+        "thinker_name": t_name,
+        "thinker_avatar": thinker.get("avatar", "🏛️"),
+        "thinker_era": thinker.get("era", ""),
+        "reply": str(result.get("reply", "")),
+        "user_rigor": user_rigor,
+        "user_fallacies": result.get("user_fallacies", []),
+        "user_biases": [],
+        "user_strengths": result.get("user_strengths", ["Planteamiento claro"]),
+        "xp_earned": int(result.get("xp_earned", 30)),
+        "is_final_round": is_final,
+        "verdict": verdict,
+        "engine": f"gemini ({cfg['model']})",
+    }
+
+
+
 
 

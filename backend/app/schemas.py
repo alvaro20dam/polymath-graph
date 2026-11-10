@@ -128,6 +128,7 @@ class UserSyncRequest(BaseModel):
     visited: list[str] | None = None
     problems: dict[str, Any] | None = None
     challenges: dict[str, Any] | None = None
+    duels: dict[str, Any] | None = None
     xp: int | None = None
     flashcards: list[dict[str, Any]] | None = None
     customGraph: dict[str, Any] | None = None
@@ -136,6 +137,16 @@ class UserSyncRequest(BaseModel):
 class UserBackupImportRequest(BaseModel):
     user_id: str = "default"
     backup: dict[str, Any]
+
+
+class DuelTurnRequest(BaseModel):
+    thinker_id: str
+    topic: str
+    user_argument: str = Field(min_length=5, max_length=5000)
+    round_number: int = Field(default=1, ge=1, le=10)
+    history: list[dict] = []
+    use_llm: bool = True
+
 
 
 

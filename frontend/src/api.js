@@ -362,6 +362,70 @@ export async function requestDebateTurn({ thinkerId, opponentId, topic, history 
   };
 }
 
+export async function requestDuelTurn({ thinkerId, topic, userArgument, roundNumber = 1, history = [], useLlm = true }) {
+  try {
+    const res = await fetch('/api/debate/duel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thinker_id: thinkerId,
+        topic,
+        user_argument: userArgument,
+        round_number: roundNumber,
+        history,
+        use_llm: useLlm,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  // Fallback local heurístico
+  const thinkers = thinkersData.thinkers;
+  const t = thinkers.find((x) => x.id === thinkerId) || { name: thinkerId, avatar: '🏛️', core_stance: 'Análisis racional.', era: 'Filosofía clásica' };
+  const analysis = analyze(userArgument);
+  const fallacies = analysis.fallacies || [];
+  const biases = analysis.biases || [];
+
+  const wordCount = (userArgument || '').trim().split(/\s+/).length;
+  let rigor = 70;
+  if (wordCount >= 25) rigor += 10;
+  if (wordCount >= 50) rigor += 8;
+  if (fallacies.length) rigor -= Math.min(35, fallacies.length * 15);
+  rigor = Math.max(25, Math.min(95, rigor));
+
+  const isFinal = roundNumber >= 3;
+  let replyText = `Escucho con atención tu tesis sobre «${topic}». Sin embargo, mi perspectiva sostiene que ${t.core_stance} ¿Cómo respondes a la objeción de consistencia en tus premisas?`;
+  if (roundNumber === 2) {
+    replyText = `Tu réplica añade elementos de interés. No obstante: ${t.core_stance} ¿No estás soslayando la distinción fundamental que separa el fenómeno de la cosa en sí?`;
+  } else if (roundNumber >= 3) {
+    replyText = `Concluimos este asalto sobre «${topic}». Has defendido tu postura con notable empeño dialéctico. Mi principio rector permanece: ${t.core_stance}`;
+  }
+
+  return {
+    thinker_id: thinkerId,
+    thinker_name: t.name,
+    thinker_avatar: t.avatar,
+    thinker_era: t.era,
+    reply: replyText,
+    user_rigor: rigor,
+    user_fallacies: fallacies,
+    user_biases: biases,
+    user_strengths: wordCount >= 30 ? ['Desarrollo conceptual estructurado'] : ['Planteamiento directo'],
+    xp_earned: Math.max(15, Math.round(rigor * 0.4)),
+    is_final_round: isFinal,
+    verdict: isFinal ? {
+      won: rigor >= 65,
+      title: rigor >= 65 ? 'Victoria Dialéctica' : 'Lección Socrática',
+      summary: `Duelo concluido contra ${t.name} con rigor de ${rigor}/100.`,
+    } : null,
+    engine: 'local',
+  };
+}
+
 export async function fetchChallengesBank() {
   try {
     const res = await fetch('/api/challenge/bank');

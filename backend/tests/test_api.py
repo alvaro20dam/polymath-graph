@@ -290,6 +290,44 @@ def test_challenge_bank_and_generate_and_eval_endpoints():
     assert "feedback" in d_eval
 
 
+def test_debate_duel_endpoint():
+    # 1. Asalto 1 contra Sócrates
+    req_round1 = {
+        "thinker_id": "socrates",
+        "topic": "¿El conocimiento del Bien garantiza la conducta virtuosa?",
+        "user_argument": "Considero que una persona puede conocer con lucidez el bien y aun así caer en la debilidad de la voluntad porque las pasiones inmediatas distorsionan el juicio temporal.",
+        "round_number": 1,
+        "history": [],
+        "use_llm": False,
+    }
+    res1 = client.post("/api/debate/duel", json=req_round1)
+    assert res1.status_code == 200
+    d1 = res1.json()
+    assert d1["thinker_id"] == "socrates"
+    assert "Sócrates" in d1["thinker_name"]
+    assert d1["user_rigor"] >= 50
+    assert d1["xp_earned"] >= 15
+    assert len(d1["reply"]) > 20
+    assert d1["is_final_round"] is False
+
+    # 2. Asalto 3 (final con veredicto)
+    req_round3 = {
+        "thinker_id": "socrates",
+        "topic": "¿El conocimiento del Bien garantiza la conducta virtuosa?",
+        "user_argument": "Por lo tanto, la akrasía demuestra que el conocimiento teórico sin hábito moral constante resulta insuficiente para asegurar la virtud práctica.",
+        "round_number": 3,
+        "history": [{"speaker": "socrates", "text": "Dime entonces si no es ignorancia del peso real de las consecuencias."}],
+        "use_llm": False,
+    }
+    res3 = client.post("/api/debate/duel", json=req_round3)
+    assert res3.status_code == 200
+    d3 = res3.json()
+    assert d3["is_final_round"] is True
+    assert d3["verdict"] is not None
+    assert "title" in d3["verdict"]
+
+
+
 
 
 

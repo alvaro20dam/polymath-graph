@@ -347,4 +347,38 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     expect(typeof api.downloadAnkiPackage).toBe('function');
     expect(typeof api.downloadAnkiTsv).toBe('function');
   });
+
+  it('Duelo Dialéctico: evaluación de rigor 1 vs 1, réplica del pensador y registro de medalla', async () => {
+    const { progress } = await import('../src/state.js');
+    const { requestDuelTurn } = await import('../src/api.js');
+
+    const duelRes = await requestDuelTurn({
+      thinkerId: 'socrates',
+      topic: '¿El conocimiento del Bien garantiza la conducta virtuosa?',
+      userArgument: 'Considero que las pasiones inmediatas distorsionan el juicio temporal porque existe la akrasía o debilidad de la voluntad.',
+      roundNumber: 3,
+      history: [],
+      useLlm: false,
+    });
+
+    expect(duelRes.thinker_id).toBe('socrates');
+    expect(duelRes.user_rigor).toBeGreaterThanOrEqual(60);
+    expect(duelRes.is_final_round).toBe(true);
+    expect(duelRes.verdict).toBeDefined();
+
+    // Registrar en el estado
+    const prevXp = progress.xp();
+    progress.recordDuel('duel_test_1', {
+      thinkerId: 'socrates',
+      topic: 'Virtud y Akrasía',
+      won: duelRes.verdict.won,
+      averageRigor: duelRes.user_rigor,
+      xp: duelRes.xp_earned,
+    });
+
+    expect(progress.xp()).toBe(prevXp + duelRes.xp_earned);
+    const prof = progress.polymathProfile();
+    const contenderBadge = prof.badges.find((b) => b.id === 'dialectic_contender');
+    expect(contenderBadge?.unlocked).toBe(true);
+  });
 });
