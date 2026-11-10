@@ -1064,5 +1064,180 @@ def analyze_document_graph(text: str, max_bridging_hops: int = 1) -> dict:
     }
 
 
+HISTORICAL_ERAS_CONFIG = [
+    {
+        "id": "antiquity",
+        "name": "Antigüedad Clásica & Helenismo",
+        "icon": "🏛️",
+        "start_year": -600,
+        "end_year": 500,
+        "color": "#7c8cff",
+        "paradigm": "El nacimiento del logos, la mayéutica, la deducción y la democracia.",
+        "description": "De los presocráticos y Pitágoras a Platón, Aristóteles, el Estoicismo y la Biblioteca de Alejandría.",
+    },
+    {
+        "id": "medieval",
+        "name": "Edad Media & Era Dorada Islámica",
+        "icon": "🕌",
+        "start_year": 501,
+        "end_year": 1400,
+        "color": "#38bdf8",
+        "paradigm": "Preservación del canon, síntesis teológica y el nacimiento del álgebra y los algoritmos.",
+        "description": "La Casa de la Sabiduría en Bagdad, Al-Juarismi, Avicena y la transmisión del saber grecolatino hacia Europa.",
+    },
+    {
+        "id": "renaissance",
+        "name": "Renacimiento & Revolución Científica",
+        "icon": "📜",
+        "start_year": 1401,
+        "end_year": 1700,
+        "color": "#f59e0b",
+        "paradigm": "La matematización del cosmos, la imprenta móvil y el método experimental.",
+        "description": "Gutenberg, la perspectiva lineal, Bacon, Galileo, Descartes, Newton y el cálculo infinitesimal.",
+    },
+    {
+        "id": "enlightenment",
+        "name": "Ilustración & Revolución Industrial",
+        "icon": "💡",
+        "start_year": 1701,
+        "end_year": 1900,
+        "color": "#34d399",
+        "paradigm": "Razón crítica, cálculo de probabilidades, termodinámica y evolución natural.",
+        "description": "Bayes, Hume, Kant, termodinámica y entropía, Darwin y la selección natural, y los primeros pasos del cómputo.",
+    },
+    {
+        "id": "twentieth_century",
+        "name": "Siglo XX: La Gran Convergencia",
+        "icon": "⚛️",
+        "start_year": 1901,
+        "end_year": 1980,
+        "color": "#f472b6",
+        "paradigm": "Relatividad, indeterminación cuántica, teoría de la información y la mente computacional.",
+        "description": "Einstein, Bohr, Gödel, Turing, Shannon, Popper, el nacimiento de la IA simbólica y el perceptrón.",
+    },
+    {
+        "id": "digital_age",
+        "name": "Era Digital & Redes Complejas",
+        "icon": "🌐",
+        "start_year": 1981,
+        "end_year": 2026,
+        "color": "#a78bfa",
+        "paradigm": "Sistemas adaptativos, aprendizaje profundo, atención masiva e interconexión global.",
+        "description": "Retropropagación, redes neuronales profundas, hipertexto, transformers y la emergencia de la IA generativa.",
+    },
+]
+
+
+@skill
+def get_historical_eras() -> list[dict]:
+    """Retorna las 6 grandes eras del conocimiento con sus nodos y paradigmas históricos."""
+    g = data.graph()
+    nodes = g.get("nodes", [])
+
+    eras_out = []
+    for cfg in HISTORICAL_ERAS_CONFIG:
+        era_nodes = [
+            n for n in nodes
+            if cfg["start_year"] <= n.get("year", 0) <= cfg["end_year"]
+        ]
+        eras_out.append({
+            **cfg,
+            "nodes_count": len(era_nodes),
+            "node_ids": [n["id"] for n in era_nodes],
+            "sample_nodes": [
+                {"id": n["id"], "label": n["label"], "year": n["year"], "domain": n["domain"]}
+                for n in era_nodes[:6]
+            ],
+        })
+    return eras_out
+
+
+@skill
+def find_ideological_bridge(source_id: str, target_id: str) -> dict:
+    """Calcula la genealogía evolutiva y puente transdisciplinario entre dos ideas históricamente distantes."""
+    by_id = data.node_by_id()
+    if source_id not in by_id or target_id not in by_id:
+        raise KeyError("Uno o ambos nodos no existen en el grafo de conocimiento.")
+
+    source_node = by_id[source_id]
+    target_node = by_id[target_id]
+
+    if source_id == target_id:
+        return {
+            "path": [source_id],
+            "hops": 0,
+            "source": source_node,
+            "target": target_node,
+            "total_years_span": 0,
+            "steps": [],
+            "synthesis": f"La idea «{source_node['label']}» es el punto de partida y llegada.",
+        }
+
+    path = citation_network_mapper(source_id, target_id)
+    if not path:
+        return {
+            "path": [],
+            "hops": None,
+            "source": source_node,
+            "target": target_node,
+            "total_years_span": target_node["year"] - source_node["year"],
+            "steps": [],
+            "synthesis": "No se encontró un camino directo en la topología actual del grafo.",
+        }
+
+    # Mapa de relaciones de enlaces
+    links = data.graph().get("links", [])
+    link_map: dict[tuple[str, str], dict] = {}
+    for l in links:
+        s, t = l["source"], l["target"]
+        link_map[(s, t)] = l
+        link_map[(t, s)] = l
+
+    steps = []
+    for i in range(len(path) - 1):
+        u_id = path[i]
+        v_id = path[i + 1]
+        u = by_id[u_id]
+        v = by_id[v_id]
+        link_info = link_map.get((u_id, v_id), {})
+        relation = link_info.get("relation", "conecta con")
+
+        delta_years = v["year"] - u["year"]
+        discipline_shift = u["domain"] != v["domain"]
+
+        step_annotation = (
+            f"Salto de {u['label']} ({u['domain']}) hacia {v['label']} ({v['domain']}): "
+            f"relación «{relation}». Transcurrieron {abs(delta_years)} años "
+            f"({'avance temporal' if delta_years >= 0 else 'retroceso o influencia retrospectiva'})."
+        )
+
+        steps.append({
+            "from_node": u,
+            "to_node": v,
+            "relation": relation,
+            "delta_years": delta_years,
+            "discipline_shift": discipline_shift,
+            "annotation": step_annotation,
+        })
+
+    span = target_node["year"] - source_node["year"]
+    synthesis = (
+        f"Puente evolutivo de {len(path) - 1} salto(s) conceptuales entre «{source_node['label']}» ({source_node['year']}) "
+        f"y «{target_node['label']}» ({target_node['year']}), abarcando un lapso de {abs(span)} años a través de las disciplinas "
+        f"de {', '.join(set(by_id[nid]['domain'] for nid in path))}."
+    )
+
+    return {
+        "path": path,
+        "hops": len(path) - 1,
+        "source": source_node,
+        "target": target_node,
+        "total_years_span": span,
+        "steps": steps,
+        "synthesis": synthesis,
+    }
+
+
+
 
 

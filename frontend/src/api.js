@@ -5,6 +5,7 @@ import { explain } from './engines/explain.js';
 import { analyze } from './engines/fallacy.js';
 import { localFlashcards } from './engines/cardgen.js';
 import { analyzeDocumentGraph } from './engines/docGraph.js';
+import { findIdeologicalBridge, groupNodesByEra } from './engines/timelineEngine.js';
 import { graph } from './state.js';
 import thinkersData from '@data/thinkers.json';
 import challengesData from '@data/challenges.json';
@@ -677,6 +678,69 @@ export async function fetchDocumentGraphAnalysis(text, maxBridgingHops = 1) {
   const localRes = analyzeDocumentGraph(text, graph);
   return { ...localRes, engine: 'local' };
 }
+
+// ---------------- Navegador Temporal y Puentes Transdisciplinarios ----------------
+export async function fetchHistoricalEras() {
+  try {
+    const res = await fetch('/api/timeline/eras');
+    if (res.ok) {
+      const data = await res.json();
+      return data.map((e) => ({
+        id: e.id,
+        name: e.name,
+        icon: e.icon,
+        startYear: e.start_year,
+        endYear: e.end_year,
+        color: e.color,
+        paradigm: e.paradigm,
+        description: e.description,
+        nodesCount: e.nodes_count,
+        nodeIds: e.node_ids || [],
+        sampleNodes: e.sample_nodes || [],
+        engine: 'api',
+      }));
+    }
+  } catch {
+    // offline
+  }
+  return groupNodesByEra(graph.nodes);
+}
+
+export async function fetchIdeologicalBridge(sourceId, targetId) {
+  try {
+    const res = await fetch('/api/timeline/bridge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_id: sourceId, target_id: targetId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        path: data.path || [],
+        hops: data.hops,
+        source: data.source,
+        target: data.target,
+        totalYearsSpan: data.total_years_span,
+        steps: (data.steps || []).map((s) => ({
+          fromNode: s.from_node,
+          toNode: s.to_node,
+          relation: s.relation,
+          deltaYears: s.delta_years,
+          disciplineShift: s.discipline_shift,
+          annotation: s.annotation,
+        })),
+        synthesis: data.synthesis,
+        engine: 'api',
+      };
+    }
+  } catch {
+    // offline fallback
+  }
+
+  const localBridge = findIdeologicalBridge(sourceId, targetId, graph.nodes, graph.links);
+  return { ...localBridge, engine: 'local' };
+}
+
 
 
 

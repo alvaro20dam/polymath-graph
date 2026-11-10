@@ -153,6 +153,13 @@ class DocumentGraphAnalysisRequest(BaseModel):
     max_bridging_hops: int = Field(default=1, ge=0, le=2)
 
 
+class TimelineBridgeRequest(BaseModel):
+    source_id: str
+    target_id: str
+    use_llm: bool = True
+
+
+
 
 
 

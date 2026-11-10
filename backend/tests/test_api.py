@@ -352,6 +352,40 @@ def test_document_analyze_graph_endpoint():
     assert len(data["domain_distribution"]) >= 1
 
 
+def test_timeline_eras_and_bridge_endpoints():
+    # 1. Eras históricas
+    res_eras = client.get("/api/timeline/eras")
+    assert res_eras.status_code == 200
+    eras = res_eras.json()
+    assert len(eras) == 6
+    era_ids = [e["id"] for e in eras]
+    assert "antiquity" in era_ids
+    assert "digital_age" in era_ids
+    assert all(e["nodes_count"] > 0 for e in eras)
+
+    # 2. Puente transdisciplinario
+    res_bridge = client.post("/api/timeline/bridge", json={
+        "source_id": "aristotelian_logic",
+        "target_id": "transformers",
+    })
+    assert res_bridge.status_code == 200
+    b = res_bridge.json()
+    assert b["hops"] >= 1
+    assert b["path"][0] == "aristotelian_logic"
+    assert b["path"][-1] == "transformers"
+    assert len(b["steps"]) == b["hops"]
+    assert b["total_years_span"] > 2000
+    assert "synthesis" in b
+
+    # 3. Error en nodo inexistente
+    res_err = client.post("/api/timeline/bridge", json={
+        "source_id": "non_existent_node",
+        "target_id": "transformers",
+    })
+    assert res_err.status_code == 404
+
+
+
 
 
 

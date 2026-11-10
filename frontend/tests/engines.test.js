@@ -427,5 +427,40 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     expect(path[0]).toBe('turing_machine');
     expect(path[path.length - 1]).toBe('neural_networks');
   });
+
+  it('Navegador Temporal y Puentes Transdisciplinarios: 6 Eras históricas y genealogía evolutiva', async () => {
+    const { HISTORICAL_ERAS, PRESET_BRIDGES, groupNodesByEra, findIdeologicalBridge, fmtYear } = await import('../src/engines/timelineEngine.js');
+
+    // 1. Eras históricas
+    expect(HISTORICAL_ERAS).toHaveLength(6);
+    expect(HISTORICAL_ERAS[0].id).toBe('antiquity');
+    expect(HISTORICAL_ERAS[5].id).toBe('digital_age');
+
+    const grouped = groupNodesByEra(graph.nodes);
+    expect(grouped).toHaveLength(6);
+    grouped.forEach((era) => {
+      expect(era.nodesCount).toBeGreaterThan(0);
+      expect(Array.isArray(era.nodes)).toBe(true);
+    });
+
+    // 2. Presets de puentes
+    expect(PRESET_BRIDGES.length).toBeGreaterThanOrEqual(5);
+    const logicAi = PRESET_BRIDGES.find((b) => b.id === 'logic_to_ai');
+    expect(logicAi).toBeDefined();
+
+    // 3. Cálculo de puente ideológico evolutivo
+    const bridge = findIdeologicalBridge('aristotelian_logic', 'transformers', graph.nodes, graph.links);
+    expect(bridge.hops).toBeGreaterThanOrEqual(1);
+    expect(bridge.path[0]).toBe('aristotelian_logic');
+    expect(bridge.path[bridge.path.length - 1]).toBe('transformers');
+    expect(bridge.steps.length).toBe(bridge.hops);
+    expect(bridge.totalYearsSpan).toBeGreaterThan(2000);
+    expect(bridge.synthesis).toMatch(/aristotélica/i);
+
+    // Formateo de años
+    expect(fmtYear(-350)).toBe('350 a.C.');
+    expect(fmtYear(1936)).toBe('1936 d.C.');
+  });
 });
+
 

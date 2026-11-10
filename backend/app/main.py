@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, db, export, llm, skills
-from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, DocumentGraphAnalysisRequest, DuelTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
+from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, DocumentGraphAnalysisRequest, DuelTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, TimelineBridgeRequest, UserBackupImportRequest, UserSyncRequest)
 
 # Inicializar base de datos local SQLite
 db.init_db()
@@ -74,6 +74,23 @@ def get_path(source: str, target: str) -> dict:
     except KeyError:
         raise HTTPException(404, "Nodo no encontrado")
     return {"path": path, "hops": None if path is None else len(path) - 1}
+
+
+# ---------------- Navegador Temporal y Puentes Transdisciplinarios ----------------
+@app.get(f"{api}/timeline/eras")
+def get_timeline_eras() -> list[dict]:
+    """Retorna las 6 grandes eras históricas del conocimiento con sus nodos y paradigmas."""
+    return skills.get_historical_eras()
+
+
+@app.post(f"{api}/timeline/bridge")
+def find_timeline_bridge(req: TimelineBridgeRequest) -> dict:
+    """Calcula la genealogía conceptual y puente evolutivo entre dos ideas distantes."""
+    try:
+        return skills.find_ideological_bridge(req.source_id, req.target_id)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
 
 
 @app.post(f"{api}/graph/validate-node")
