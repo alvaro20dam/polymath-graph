@@ -327,6 +327,32 @@ def test_debate_duel_endpoint():
     assert "title" in d3["verdict"]
 
 
+def test_document_analyze_graph_endpoint():
+    text = (
+        "Alan Turing introdujo la máquina de Turing para formalizar el cómputo y el problema de la parada.\n\n"
+        "Por otro lado, la inferencia bayesiana y el teorema de Bayes permiten actualizar creencias ante evidencia incierta,\n"
+        "mientras que Karl Popper propuso la falsabilidad como criterio de demarcación científica."
+    )
+    req = {
+        "text": text,
+        "max_bridging_hops": 1,
+    }
+    res = client.post("/api/document/analyze-graph", json=req)
+    assert res.status_code == 200
+    data = res.json()
+    assert "detected_nodes" in data
+    assert "paragraphs" in data
+    assert "domain_distribution" in data
+    assert "stats" in data
+    assert len(data["paragraphs"]) >= 2
+    detected_ids = [n["id"] for n in data["detected_nodes"]]
+    # Debe detectar al menos turing_machine, bayes_theorem o falsificationism
+    assert any(x in detected_ids for x in ["turing_machine", "bayes_theorem", "falsificationism"])
+    # Debe tener distribución por dominios
+    assert len(data["domain_distribution"]) >= 1
+
+
+
 
 
 

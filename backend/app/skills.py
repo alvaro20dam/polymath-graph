@@ -857,4 +857,212 @@ def evaluate_duel_turn_heuristic(
     }
 
 
+@skill
+def analyze_document_graph(text: str, max_bridging_hops: int = 1) -> dict:
+    """Analiza un documento/artículo y extrae el subgrafo semántico activo (nodos, autores, párrafos y puentes transdisciplinarios)."""
+    g = data.graph()
+    nodes = g.get("nodes", [])
+    links = g.get("links", [])
+    domains = g.get("domains", {})
+    by_id = {n["id"]: n for n in nodes}
+    thinkers_cat = data.load("thinkers").get("thinkers", [])
+    thinkers_by_name = {norm(t["name"]): t for t in thinkers_cat}
+
+    raw_paras = [p.strip() for p in re.split(r"\n\s*\n+", text.strip()) if len(p.strip()) >= 10]
+    if not raw_paras:
+        raw_paras = [text.strip()]
+
+    node_matchers = []
+    for n in nodes:
+        lbl_norm = norm(n["label"])
+        aliases = [lbl_norm]
+        if "_" in n["id"]:
+            aliases.append(norm(n["id"].replace("_", " ")))
+        patterns = [re.compile(rf"\b{re.escape(a)}\b", re.IGNORECASE) for a in set(aliases) if len(a) >= 3]
+        node_matchers.append({"id": n["id"], "node": n, "patterns": patterns})
+
+    author_matchers = []
+    seen_authors = set()
+    for n in nodes:
+        for a in n.get("authors", []):
+            a_norm = norm(a)
+            if a_norm and a_norm not in seen_authors and len(a_norm) >= 3:
+                seen_authors.add(a_norm)
+                th = thinkers_by_name.get(a_norm)
+                author_matchers.append({
+                    "name": a,
+                    "norm": a_norm,
+                    "avatar": th.get("avatar", "👤") if th else "👤",
+                    "node_id": n["id"],
+                    "pattern": re.compile(rf"\b{re.escape(a_norm)}\b", re.IGNORECASE)
+                })
+
+    detected_node_counts: dict[str, int] = {}
+    detected_author_counts: dict[str, dict] = {}
+    paragraphs_out = []
+
+    for idx, p_text in enumerate(raw_paras):
+        p_norm = norm(p_text)
+        p_node_ids = set()
+        p_authors = []
+
+        for nm in node_matchers:
+            for pat in nm["patterns"]:
+                if pat.search(p_norm):
+                    nid = nm["id"]
+                    p_node_ids.add(nid)
+                    detected_node_counts[nid] = detected_node_counts.get(nid, 0) + 1
+                    break
+
+        for am in author_matchers:
+            if am["pattern"].search(p_norm):
+                a_name = am["name"]
+                p_authors.append({
+                    "name": a_name,
+                    "avatar": am["avatar"],
+                    "node_id": am["node_id"]
+                })
+                p_node_ids.add(am["node_id"])
+                detected_node_counts[am["node_id"]] = detected_node_counts.get(am["node_id"], 0) + 1
+                if a_name not in detected_author_counts:
+                    detected_author_counts[a_name] = {
+                        "name": a_name,
+                        "avatar": am["avatar"],
+                        "count": 0,
+                        "nodes": set()
+                    }
+                detected_author_counts[a_name]["count"] += 1
+                detected_author_counts[a_name]["nodes"].add(am["node_id"])
+
+        paragraphs_out.append({
+            "index": idx,
+            "text": p_text,
+            "node_ids": sorted(list(p_node_ids)),
+            "authors": p_authors
+        })
+
+    if len(detected_node_counts) < 2:
+        doc_tokens = set(terms(text))
+        for n in nodes:
+            s_tokens = set(terms(f"{n['label']} {n['summary']}"))
+            overlap = len(doc_tokens.intersection(s_tokens))
+            if overlap >= 3 and n["id"] not in detected_node_counts:
+                detected_node_counts[n["id"]] = 1
+
+    detected_node_ids = set(detected_node_counts.keys())
+    bridging_nodes = set()
+    if max_bridging_hops >= 1 and len(detected_node_ids) >= 2:
+        adj: dict[str, set] = defaultdict(set)
+        for l in links:
+            adj[l["source"]].add(l["target"])
+            adj[l["target"]].add(l["source"])
+
+        det_list = list(detected_node_ids)
+        for i in range(len(det_list)):
+            for j in range(i + 1, len(det_list)):
+                u, v = det_list[i], det_list[j]
+                if v not in adj.get(u, set()):
+                    common = adj.get(u, set()).intersection(adj.get(v, set()))
+                    if common:
+                        best_hub = sorted(list(common), key=lambda x: len(adj.get(x, set())), reverse=True)[0]
+                        bridging_nodes.add(best_hub)
+
+    all_subgraph_nodes = []
+    for nid, count in detected_node_counts.items():
+        if nid in by_id:
+            node_dict = dict(by_id[nid])
+            node_dict["mentions"] = count
+            node_dict["is_bridge"] = False
+            all_subgraph_nodes.append(node_dict)
+
+    for bn in bridging_nodes:
+        if bn not in detected_node_counts and bn in by_id:
+            node_dict = dict(by_id[bn])
+            node_dict["mentions"] = 0
+            node_dict["is_bridge"] = True
+            all_subgraph_nodes.append(node_dict)
+
+    final_node_ids = {n["id"] for n in all_subgraph_nodes}
+    final_links = []
+    for l in links:
+        if l["source"] in final_node_ids and l["target"] in final_node_ids:
+            final_links.append(dict(l))
+
+    domain_counts: dict[str, int] = {}
+    for n in all_subgraph_nodes:
+        d = n.get("domain", "other")
+        domain_counts[d] = domain_counts.get(d, 0) + 1
+
+    total_sub_nodes = max(1, len(all_subgraph_nodes))
+    domain_distribution = {
+        d: {
+            "label": domains.get(d, {}).get("label", d.capitalize()),
+            "color": domains.get(d, {}).get("color", "#7c8cff"),
+            "count": cnt,
+            "percentage": round((cnt / total_sub_nodes) * 100, 1),
+        }
+        for d, cnt in domain_counts.items()
+    }
+
+    bridges_out = []
+    det_nodes_list = [n for n in all_subgraph_nodes if not n.get("is_bridge")]
+    if len(det_nodes_list) >= 2:
+        pairs_checked = set()
+        for i in range(min(len(det_nodes_list), 8)):
+            for j in range(i + 1, min(len(det_nodes_list), 8)):
+                u_n = det_nodes_list[i]
+                v_n = det_nodes_list[j]
+                if u_n["domain"] != v_n["domain"]:
+                    pair_key = tuple(sorted([u_n["id"], v_n["id"]]))
+                    if pair_key in pairs_checked:
+                        continue
+                    pairs_checked.add(pair_key)
+                    try:
+                        p = citation_network_mapper(u_n["id"], v_n["id"])
+                    except Exception:
+                        p = None
+                    if p and len(p) >= 2:
+                        bridges_out.append({
+                            "source": u_n["id"],
+                            "source_label": u_n["label"],
+                            "source_domain": u_n["domain"],
+                            "target": v_n["id"],
+                            "target_label": v_n["label"],
+                            "target_domain": v_n["domain"],
+                            "path": p,
+                            "length": len(p) - 1
+                        })
+                    if len(bridges_out) >= 3:
+                        break
+            if len(bridges_out) >= 3:
+                break
+
+    authors_out = [
+        {
+            "name": d["name"],
+            "avatar": d["avatar"],
+            "count": d["count"],
+            "nodes": sorted(list(d["nodes"]))
+        }
+        for d in detected_author_counts.values()
+    ]
+
+    return {
+        "detected_nodes": all_subgraph_nodes,
+        "links": final_links,
+        "domain_distribution": domain_distribution,
+        "paragraphs": paragraphs_out,
+        "bridges": bridges_out,
+        "authors": sorted(authors_out, key=lambda a: a["count"], reverse=True),
+        "stats": {
+            "total_nodes": len(all_subgraph_nodes),
+            "direct_concepts": len(detected_node_counts),
+            "bridging_concepts": len(bridging_nodes),
+            "paragraph_count": len(paragraphs_out),
+            "author_count": len(authors_out)
+        }
+    }
+
+
+
 

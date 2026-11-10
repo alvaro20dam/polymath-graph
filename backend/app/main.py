@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 import pypdf
 
 from . import data, db, export, llm, skills
-from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, DuelTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
+from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, DocumentGraphAnalysisRequest, DuelTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
 
 # Inicializar base de datos local SQLite
 db.init_db()
@@ -386,6 +386,12 @@ async def rag(req: RagRequest) -> dict:
     res = skills.document_qa(req.text, req.question, req.k)
     res["engine"] = "heuristic"
     return res
+
+
+@app.post(f"{api}/document/analyze-graph")
+def analyze_document_graph_endpoint(req: DocumentGraphAnalysisRequest) -> dict:
+    """Extrae el subgrafo semántico activo (nodos, autores, párrafos y puentes transdisciplinarios) de un documento."""
+    return skills.analyze_document_graph(req.text, req.max_bridging_hops)
 
 
 @app.post(f"{api}/flashcards/generate")

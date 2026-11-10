@@ -4,6 +4,7 @@ import { answerFromDocument, buildIndex, search, terms } from './engines/rag.js'
 import { explain } from './engines/explain.js';
 import { analyze } from './engines/fallacy.js';
 import { localFlashcards } from './engines/cardgen.js';
+import { analyzeDocumentGraph } from './engines/docGraph.js';
 import { graph } from './state.js';
 import thinkersData from '@data/thinkers.json';
 import challengesData from '@data/challenges.json';
@@ -626,6 +627,57 @@ export async function downloadAnkiTsv(userId = 'default') {
     return false;
   }
 }
+
+// ---------------- Lector Aumentado: Análisis de Subgrafo Semántico ----------------
+export async function fetchDocumentGraphAnalysis(text, maxBridgingHops = 1) {
+  try {
+    const res = await fetch('/api/document/analyze-graph', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, max_bridging_hops: maxBridgingHops }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Mapear campos snake_case del backend a camelCase del frontend si es necesario
+      return {
+        detectedNodes: data.detected_nodes || [],
+        links: data.links || [],
+        domainDistribution: data.domain_distribution || {},
+        paragraphs: (data.paragraphs || []).map((p) => ({
+          index: p.index,
+          text: p.text,
+          nodeIds: p.node_ids || [],
+          authors: p.authors || [],
+        })),
+        bridges: (data.bridges || []).map((b) => ({
+          source: b.source,
+          sourceLabel: b.source_label,
+          sourceDomain: b.source_domain,
+          target: b.target,
+          targetLabel: b.target_label,
+          targetDomain: b.target_domain,
+          path: b.path || [],
+          length: b.length || 0,
+        })),
+        authors: data.authors || [],
+        stats: {
+          totalNodes: data.stats?.total_nodes || 0,
+          directConcepts: data.stats?.direct_concepts || 0,
+          bridgingConcepts: data.stats?.bridging_concepts || 0,
+          paragraphCount: data.stats?.paragraph_count || 0,
+          authorCount: data.stats?.author_count || 0,
+        },
+        engine: 'api',
+      };
+    }
+  } catch {
+    // Fallback offline
+  }
+
+  const localRes = analyzeDocumentGraph(text, graph);
+  return { ...localRes, engine: 'local' };
+}
+
 
 
 

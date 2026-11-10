@@ -381,4 +381,51 @@ describe('motor de flashcards y repetición espaciada (Anki / SM-2)', () => {
     const contenderBadge = prof.badges.find((b) => b.id === 'dialectic_contender');
     expect(contenderBadge?.unlocked).toBe(true);
   });
+
+  it('Lector Aumentado Split-Screen: extracción de subgrafo semántico, mapeo de párrafos y puentes transdisciplinarios', async () => {
+    const { analyzeDocumentGraph, findShortestPath } = await import('../src/engines/docGraph.js');
+
+    const sampleDoc = `
+      Alan Turing revolucionó la computación con la máquina de Turing y el análisis formal del problema de la parada.
+      
+      Por su parte, el teorema de Bayes y la inferencia bayesiana permiten actualizar la probabilidad a priori ante nueva evidencia.
+      
+      Karl Popper propuso el criterio de falsacionismo en filosofía de la ciencia, cuestionando la inducción pura.
+    `;
+
+    const res = analyzeDocumentGraph(sampleDoc, graph);
+
+    expect(res.detectedNodes.length).toBeGreaterThanOrEqual(3);
+    const nodeIds = res.detectedNodes.map((n) => n.id);
+    expect(nodeIds).toContain('turing_machine');
+    expect(nodeIds).toContain('bayes_theorem');
+    expect(nodeIds).toContain('falsificationism');
+
+    // Mapeo de párrafos
+    expect(res.paragraphs.length).toBe(3);
+    expect(res.paragraphs[0].nodeIds).toContain('turing_machine');
+    expect(res.paragraphs[1].nodeIds).toContain('bayes_theorem');
+    expect(res.paragraphs[2].nodeIds).toContain('falsificationism');
+
+    // Autores
+    const authorNames = res.authors.map((a) => a.name);
+    expect(authorNames).toContain('Alan Turing');
+
+    // Distribución por disciplina
+    expect(Object.keys(res.domainDistribution).length).toBeGreaterThanOrEqual(2);
+    expect(res.domainDistribution.technology || res.domainDistribution.science).toBeDefined();
+
+    // Puentes transdisciplinarios
+    expect(res.bridges.length).toBeGreaterThanOrEqual(1);
+    const bridge = res.bridges[0];
+    expect(bridge.path.length).toBeGreaterThanOrEqual(2);
+    expect(bridge.sourceDomain).not.toBe(bridge.targetDomain);
+
+    // BFS camino más corto
+    const path = findShortestPath('turing_machine', 'neural_networks', graph.nodes, graph.links);
+    expect(Array.isArray(path)).toBe(true);
+    expect(path[0]).toBe('turing_machine');
+    expect(path[path.length - 1]).toBe('neural_networks');
+  });
 });
+

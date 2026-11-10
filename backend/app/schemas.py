@@ -148,6 +148,12 @@ class DuelTurnRequest(BaseModel):
     use_llm: bool = True
 
 
+class DocumentGraphAnalysisRequest(BaseModel):
+    text: str = Field(min_length=5, max_length=200000)
+    max_bridging_hops: int = Field(default=1, ge=0, le=2)
+
+
+
 
 
 
