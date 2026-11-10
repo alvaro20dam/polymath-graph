@@ -1,5 +1,6 @@
-// Estado compartido: progreso del estudiante (solo localStorage, sin cuentas), grafo vivo y utilidades de navegación.
+// Estado compartido: progreso del estudiante, grafo vivo, flashcards y persistencia local SQLite.
 import graph from '@data/graph.json';
+import { fetchUserState, syncUserState, exportUserBackup, importUserBackup } from './api.js';
 
 export { graph };
 export const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
@@ -7,6 +8,173 @@ export const domainOf = (id) => graph.domains[nodeById.get(id)?.domain];
 
 const KEY = 'polymath-graph.progress.v1';
 const CUSTOM_GRAPH_KEY = 'polymath-graph.custom-graph.v1';
+
+let _activeUserId = 'default';
+try {
+  _activeUserId = localStorage.getItem('polymath_active_user') || 'default';
+} catch { /* modo privado */ }
+
+let _syncStatus = 'synced'; // 'synced' | 'syncing' | 'offline'
+let _syncTimer = null;
+
+export function getActiveUserId() {
+  return _activeUserId;
+}
+
+export function setActiveUserId(uid) {
+  _activeUserId = uid || 'default';
+  try {
+    localStorage.setItem('polymath_active_user', _activeUserId);
+  } catch { /* noop */ }
+  initDbSync(_activeUserId);
+}
+
+export function getSyncStatus() {
+  return { status: _syncStatus, user: _activeUserId };
+}
+
+export function scheduleDbSync() {
+  if (typeof window === 'undefined') return;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncStatus = 'syncing';
+  emit('db-status', { status: 'syncing', user: _activeUserId });
+
+  _syncTimer = setTimeout(async () => {
+    try {
+      const customNodes = graph.nodes.filter((n) => n.custom);
+      const customNodeIds = new Set(customNodes.map((n) => n.id));
+      const customLinks = graph.links.filter((l) => {
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        return customNodeIds.has(s) || customNodeIds.has(t);
+      }).map((l) => ({
+        source: typeof l.source === 'object' ? l.source.id : l.source,
+        target: typeof l.target === 'object' ? l.target.id : l.target,
+        relation: l.relation || 'influences',
+      }));
+
+      const payload = {
+        user_id: _activeUserId,
+        xp: data.xp || 0,
+        visited: data.visited || [],
+        problems: data.problems || {},
+        challenges: data.challenges || {},
+        flashcards: deck.cards || [],
+        customGraph: { nodes: customNodes, links: customLinks },
+      };
+
+      const res = await syncUserState(payload);
+      if (res) {
+        _syncStatus = 'synced';
+        emit('db-status', { status: 'synced', user: _activeUserId, lastSync: Date.now() });
+      } else {
+        _syncStatus = 'offline';
+        emit('db-status', { status: 'offline', user: _activeUserId });
+      }
+    } catch {
+      _syncStatus = 'offline';
+      emit('db-status', { status: 'offline', user: _activeUserId });
+    }
+  }, 800);
+}
+
+export async function initDbSync(userId = _activeUserId) {
+  _activeUserId = userId;
+  try {
+    localStorage.setItem('polymath_active_user', userId);
+  } catch { /* modo privado */ }
+
+  const remote = await fetchUserState(userId);
+  if (!remote) {
+    _syncStatus = 'offline';
+    emit('db-status', { status: 'offline', user: userId });
+    return false;
+  }
+
+  // 1. Unir visited
+  if (Array.isArray(remote.visited) && remote.visited.length) {
+    const vSet = new Set([...data.visited, ...remote.visited]);
+    data.visited = [...vSet];
+  }
+
+  // 2. Unir problems
+  if (remote.problems && typeof remote.problems === 'object') {
+    data.problems = { ...data.problems, ...remote.problems };
+  }
+
+  // 3. Unir challenges
+  if (remote.challenges && typeof remote.challenges === 'object') {
+    data.challenges = { ...data.challenges, ...remote.challenges };
+  }
+
+  // 4. XP
+  data.xp = Math.max(data.xp || 0, remote.xp || 0);
+  save();
+
+  // 5. Flashcards
+  if (Array.isArray(remote.flashcards) && remote.flashcards.length) {
+    const cardMap = new Map();
+    deck.cards.forEach((c) => cardMap.set(c.id, c));
+    remote.flashcards.forEach((rc) => {
+      if (!cardMap.has(rc.id)) {
+        cardMap.set(rc.id, rc);
+      } else {
+        const local = cardMap.get(rc.id);
+        if ((rc.reps || 0) > (local.reps || 0)) {
+          cardMap.set(rc.id, rc);
+        }
+      }
+    });
+    deck.cards = Array.from(cardMap.values());
+    saveDeck();
+  }
+
+  // 6. Custom Graph
+  if (remote.customGraph?.nodes?.length) {
+    integrateGraphNodes(remote.customGraph.nodes, remote.customGraph.links || []);
+  }
+
+  _syncStatus = 'synced';
+  emit('progress');
+  emit('flashcards', { synced: true });
+  emit('db-status', { status: 'synced', user: userId, profile: remote.profile });
+  return true;
+}
+
+export async function exportLocalBackup() {
+  const backup = await exportUserBackup(_activeUserId);
+  if (!backup) {
+    return {
+      polymath_version: '1.0.0',
+      exported_at: new Date().toISOString(),
+      user_id: _activeUserId,
+      xp: data.xp,
+      visited: data.visited,
+      problems: data.problems,
+      challenges: data.challenges,
+      flashcards: deck.cards,
+      customGraph: {
+        nodes: graph.nodes.filter((n) => n.custom),
+        links: graph.links.filter((l) => {
+          const s = typeof l.source === 'object' ? l.source.id : l.source;
+          const t = typeof l.target === 'object' ? l.target.id : l.target;
+          return nodeById.get(s)?.custom || nodeById.get(t)?.custom;
+        }),
+      },
+    };
+  }
+  return backup;
+}
+
+export async function importLocalBackup(backupObj) {
+  if (!backupObj || typeof backupObj !== 'object') return false;
+  const res = await importUserBackup(backupObj, _activeUserId);
+  if (res) {
+    await initDbSync(_activeUserId);
+    return true;
+  }
+  return false;
+}
 
 function loadCustomGraph() {
   try {
@@ -31,6 +199,7 @@ function saveCustomGraph() {
     }));
     localStorage.setItem(CUSTOM_GRAPH_KEY, JSON.stringify({ nodes: customNodes, links: customLinks }));
   } catch { /* modo privado */ }
+  scheduleDbSync();
 }
 
 // Hidratar nodos personalizados guardados al iniciar
@@ -69,6 +238,7 @@ function load() {
 let data = load();
 const save = () => {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* modo privado */ }
+  scheduleDbSync();
 };
 
 export const bus = new EventTarget();
@@ -291,6 +461,7 @@ function loadDeck() {
 let deck = loadDeck();
 const saveDeck = () => {
   try { localStorage.setItem(FC_KEY, JSON.stringify(deck)); } catch { /* modo privado */ }
+  scheduleDbSync();
 };
 const fcKey = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 const dayStr = (now = Date.now()) => {
@@ -373,4 +544,11 @@ export function nodeChip(id) {
   const d = graph.domains[n.domain] || { color: '#7c8cff' };
   const label = n.custom ? `✦ ${n.label}` : n.label;
   return el('button', { class: 'node-chip', style: `--c:${d.color}`, title: n.summary, onclick: () => openNode(id) }, label);
+}
+
+// Auto-hidratación SQLite en segundo plano si corre en navegador
+if (typeof window !== 'undefined' && typeof fetch === 'function') {
+  setTimeout(() => {
+    initDbSync().catch(() => {});
+  }, 100);
 }

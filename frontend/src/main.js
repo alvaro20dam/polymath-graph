@@ -1,5 +1,5 @@
 import './styles.css';
-import { el, onNavigate, bus, flashcards } from './state.js';
+import { el, onNavigate, bus, flashcards, getSyncStatus } from './state.js';
 import { deckStats, SRS_CONFIG } from './engines/srs.js';
 
 const TABS = [
@@ -34,6 +34,29 @@ function updateReviewBadge() {
 bus.addEventListener('flashcards', updateReviewBadge);
 updateReviewBadge();
 setInterval(updateReviewBadge, 60 * 1000);
+
+// Indicador de persistencia SQLite Local
+const syncPill = document.querySelector('.badge-free');
+if (syncPill) {
+  function renderSyncPill(ev) {
+    const s = ev?.detail || getSyncStatus();
+    if (s.status === 'syncing') {
+      syncPill.textContent = '💾 Guardando en SQLite...';
+      syncPill.className = 'sync-pill syncing';
+      syncPill.title = 'Sincronizando estado con data/polymath.db';
+    } else if (s.status === 'offline') {
+      syncPill.textContent = '💾 SQLite Local (Offline)';
+      syncPill.className = 'sync-pill';
+      syncPill.title = 'Modo local sin conexión backend activa';
+    } else {
+      syncPill.textContent = '💾 SQLite Local (Activo)';
+      syncPill.className = 'sync-pill synced';
+      syncPill.title = 'Persistencia automática activa en data/polymath.db';
+    }
+  }
+  bus.addEventListener('db-status', renderSyncPill);
+  renderSyncPill();
+}
 
 async function show(tabId, params = {}) {
   const tab = TABS.find((t) => t.id === tabId) ?? TABS[0];

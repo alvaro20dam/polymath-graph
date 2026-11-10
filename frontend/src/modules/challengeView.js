@@ -1,5 +1,5 @@
 // Desafío Polímata: Radar de Maestría Interdisciplinaria (Spider Chart) + Retos Adaptativos con IA
-import { el, graph, nodeById, nodeChip, openNode, navigate, progress, flashcards, bus } from '../state.js';
+import { el, graph, nodeById, nodeChip, openNode, navigate, progress, flashcards, bus, exportLocalBackup, importLocalBackup, getSyncStatus } from '../state.js';
 import { newCard } from '../engines/srs.js';
 import { renderMarkdown } from '../engines/text.js';
 import { requestGenerateChallenge, requestEvaluateChallenge, fetchChallengesBank, getLlmStatus } from '../api.js';
@@ -143,6 +143,60 @@ export function mount(root) {
           el('div', { class: `badge-item ${b.unlocked ? 'unlocked' : 'locked'}`, title: `${b.name}: ${b.desc}` },
             el('span', { class: 'badge-icon' }, b.icon),
             el('span', { class: 'badge-name' }, b.name)
+          )
+        )
+      ),
+      el('div', { class: 'sync-actions row', style: 'margin-top:1rem;padding-top:.8rem;border-top:1px solid rgba(255,255,255,0.08);justify-content:space-between;align-items:center;font-size:.85rem;' },
+        el('div', { class: 'row', style: 'gap:.5rem;align-items:center;' },
+          el('span', {}, '💾'),
+          el('span', { class: 'muted' }, 'Base de datos local: '),
+          el('code', { style: 'font-size:.8rem;background:rgba(255,255,255,0.06);padding:.15rem .4rem;border-radius:4px;' }, 'data/polymath.db'),
+          el('span', { class: 'pill', style: '--c:var(--good);font-size:.75rem;' }, 'Persistencia Activa')
+        ),
+        el('div', { class: 'row', style: 'gap:.45rem;' },
+          el('button', {
+            class: 'btn small',
+            title: 'Descarga un archivo JSON con tu progreso, notas y flashcards',
+            onclick: async () => {
+              const backup = await exportLocalBackup();
+              const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `polymath_backup_${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            },
+          }, '📥 Exportar Respaldo'),
+          el('label', {
+            class: 'btn small',
+            style: 'cursor:pointer;',
+            title: 'Restaura una copia de seguridad en formato JSON',
+          },
+            '📤 Importar Respaldo',
+            el('input', {
+              type: 'file',
+              accept: '.json',
+              style: 'display:none;',
+              onchange: async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text);
+                  const ok = await importLocalBackup(data);
+                  if (ok) {
+                    alert('✓ Respaldo restaurado con éxito en SQLite.');
+                    renderProfile();
+                    renderRadar();
+                  } else {
+                    alert('Error al importar el respaldo. Verifica el formato JSON.');
+                  }
+                } catch (err) {
+                  alert('Error al leer el archivo JSON: ' + err.message);
+                }
+              },
+            })
           )
         )
       )

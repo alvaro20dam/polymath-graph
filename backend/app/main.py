@@ -15,8 +15,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import pypdf
 
-from . import data, llm, skills
-from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard)
+from . import data, db, llm, skills
+from .schemas import (ChallengeEvaluateRequest, ChallengeGenerateRequest, DebateTurnRequest, ExplainRequest, FallacyRequest, FlashcardRequest, GraphExtractRequest, NodeDraft, ProfileCreateRequest, RagRequest, SessionModel, SocraticEvaluate, SocraticSession, SocraticStart, SocraticWhiteboard, UserBackupImportRequest, UserSyncRequest)
+
+# Inicializar base de datos local SQLite
+db.init_db()
 
 app = FastAPI(title="Polymath Graph API", version="1.0.0", description="Grafo de conocimiento, tutor socrático, verificador lógico, explicador y RAG ligero.")
 app.add_middleware(
@@ -39,6 +42,7 @@ def health() -> dict:
         "links": len(g["links"]),
         "skills": sorted(skills.SKILLS),
         "llm": {"enabled": llm_cfg["enabled"], "model": llm_cfg["model"]},
+        "database": "sqlite_local",
     }
 
 
@@ -377,6 +381,46 @@ async def flashcards_generate(req: FlashcardRequest) -> dict:
         if res is not None:
             return res
     return skills.generate_flashcards(req.text, req.max_cards, req.level, req.lang)
+
+
+# ---------------- Persistencia Local SQLite / Perfiles ----------------
+@app.get(f"{api}/user/profiles")
+def get_user_profiles() -> list[dict]:
+    """Lista todos los perfiles guardados localmente en SQLite."""
+    return db.list_profiles()
+
+
+@app.post(f"{api}/user/profiles")
+def create_user_profile(req: ProfileCreateRequest) -> dict:
+    """Crea un nuevo perfil local."""
+    uid = req.user_id or re.sub(r"[^a-zA-Z0-9_-]", "_", req.name.lower().strip())
+    return db.create_profile(user_id=uid, name=req.name, avatar=req.avatar)
+
+
+@app.get(f"{api}/user/state")
+def get_user_state(user_id: str = Query(default="default")) -> dict:
+    """Recupera el estado completo de un usuario (progreso, flashcards, retos, nodos)."""
+    return db.get_user_state(user_id=user_id)
+
+
+@app.post(f"{api}/user/sync")
+def sync_user_state(req: UserSyncRequest) -> dict:
+    """Sincroniza el estado del frontend con la base de datos local SQLite."""
+    payload = req.model_dump()
+    return db.sync_user_state(user_id=req.user_id, payload=payload)
+
+
+@app.get(f"{api}/user/backup/export")
+def export_user_backup(user_id: str = Query(default="default")) -> dict:
+    """Descarga un volcado JSON con todo el progreso, notas y flashcards del usuario."""
+    return db.export_backup(user_id=user_id)
+
+
+@app.post(f"{api}/user/backup/import")
+def import_user_backup(req: UserBackupImportRequest) -> dict:
+    """Restaura o fusiona un archivo JSON de respaldo en la base de datos local."""
+    return db.import_backup(user_id=req.user_id, backup_dict=req.backup)
+
 
 
 

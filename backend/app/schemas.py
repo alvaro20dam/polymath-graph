@@ -1,7 +1,7 @@
 """Modelos Pydantic de la API."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -115,6 +115,28 @@ class ChallengeEvaluateRequest(BaseModel):
     expected_explanation: str = ""
     domains: list[str] = []
     use_llm: bool = True
+
+
+class ProfileCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    avatar: str = Field(default="🧙‍♂️", max_length=10)
+    user_id: str | None = Field(default=None, max_length=50)
+
+
+class UserSyncRequest(BaseModel):
+    user_id: str = "default"
+    visited: list[str] | None = None
+    problems: dict[str, Any] | None = None
+    challenges: dict[str, Any] | None = None
+    xp: int | None = None
+    flashcards: list[dict[str, Any]] | None = None
+    customGraph: dict[str, Any] | None = None
+
+
+class UserBackupImportRequest(BaseModel):
+    user_id: str = "default"
+    backup: dict[str, Any]
+
 
 
 

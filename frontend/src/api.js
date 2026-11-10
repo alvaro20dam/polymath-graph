@@ -446,5 +446,67 @@ export async function requestEvaluateChallenge({ challengeId, question, userAnsw
   };
 }
 
+// ---------------- Persistencia SQLite Local / Perfiles ----------------
+export async function fetchUserProfiles() {
+  try {
+    const res = await fetch('/api/user/profiles');
+    if (res.ok) return await res.json();
+  } catch { /* offline / dev fallback */ }
+  return [{ id: 'default', name: 'Polímata Principal', avatar: '🧙‍♂️', xp: 0 }];
+}
+
+export async function createUserProfile(name, avatar = '🧙‍♂️') {
+  try {
+    const res = await fetch('/api/user/profiles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, avatar }),
+    });
+    if (res.ok) return await res.json();
+  } catch { /* offline */ }
+  return { id: name.toLowerCase().replace(/[^a-z0-9_-]/g, '_'), name, avatar, xp: 0 };
+}
+
+export async function fetchUserState(userId = 'default') {
+  try {
+    const res = await fetch(`/api/user/state?user_id=${encodeURIComponent(userId)}`);
+    if (res.ok) return await res.json();
+  } catch { /* offline */ }
+  return null;
+}
+
+export async function syncUserState(payload) {
+  try {
+    const res = await fetch('/api/user/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) return await res.json();
+  } catch { /* offline */ }
+  return null;
+}
+
+export async function exportUserBackup(userId = 'default') {
+  try {
+    const res = await fetch(`/api/user/backup/export?user_id=${encodeURIComponent(userId)}`);
+    if (res.ok) return await res.json();
+  } catch { /* offline */ }
+  return null;
+}
+
+export async function importUserBackup(backup, userId = 'default') {
+  try {
+    const res = await fetch('/api/user/backup/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, backup }),
+    });
+    if (res.ok) return await res.json();
+  } catch { /* offline */ }
+  return null;
+}
+
+
 
 
